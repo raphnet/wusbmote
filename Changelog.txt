@@ -1,0 +1,30 @@
+--- v1.0 (May 2, 2009)
+	- Initial release under GPLv2. 
+	- Supports 1 alternate mapping. Hold 'Start' at power-up.
+
+
+	Connect Clock to PC5
+	Connect Latch to PC4
+	Connect Data to PC3
+	Connect Pin2 (+5volts) to 5 volts
+	Connect Ground to Ground...
+
+	Do not connect Vbat.
+
+
+Pin  Color   Name
+-----------------------------------
+ 1   Yellow  Data
+ 2   Blue    +5 volts
+ 3   Brown   Reset (Latch)
+ 4   Orange  Clock
+ 5   Black   Ground
+ 6   Red     Vbat (battery power)
+
+ _________
+/ 3  2  1 \
+| 6  5  4 |
+'---------'
+(looking into cable)
+
+
