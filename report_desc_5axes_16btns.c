@@ -23,13 +23,14 @@
  * [1] Y
  * [2] RX
  * [3] RY
- * [4] Btn 0-7
- * [5] Btn 8-9 (And 6 padding bits)
+ * [4] RZ
+ * [5] Btn 0-7
+ * [6] Btn 8-15
  * 
  *
  */
 
-static const char usbHidReportDescriptor_4axes_10btns[] PROGMEM = {
+static const char usbHidReportDescriptor_5axes_16btns[] PROGMEM = {
     0x05, 0x01,                    // USAGE_PAGE (Generic Desktop)
     0x09, 0x05,                    // USAGE (Game Pad)
     0xa1, 0x01,                    // COLLECTION (Application)
@@ -37,28 +38,40 @@ static const char usbHidReportDescriptor_4axes_10btns[] PROGMEM = {
     0xa1, 0x00,                    //   COLLECTION (Physical)
     0x09, 0x30,                    //     USAGE (X)
     0x09, 0x31,                    //     USAGE (Y)
-	0x09, 0x33,						// USAGE (Rx)
-	0x09, 0x34,						// USAGE (Ry)
-    0x15, 0x00,                    //   LOGICAL_MINIMUM (0)
+
+	0x15, 0x00,                    //   LOGICAL_MINIMUM (0)
     0x26, 0xff, 0x00,              //     LOGICAL_MAXIMUM (255)
     0x75, 0x08,                    //   REPORT_SIZE (8)
-    0x95, 0x04,                    //   REPORT_COUNT (4)
+    0x95, 0x02,                    //   REPORT_COUNT (2)
     0x81, 0x02,                    //   INPUT (Data,Var,Abs)
+
+	0x09, 0x33,						// USAGE (Rx)
+	0x09, 0x34,						// USAGE (Ry)
+	0x09, 0x35,						// USAGE (Rz) // TODO : CHECK IF THIS REALLY IS 0x35
+
+	0x15, 0x00,                    //   LOGICAL_MINIMUM (0)
+    0x26, 0xff, 0x03,              //     LOGICAL_MAXIMUM (1024)
+    0x75, 0x0A,                    //   REPORT_SIZE (8)
+    0x95, 0x03,                    //   REPORT_COUNT (3)
+
+    0x81, 0x02,                    //   INPUT (Data,Var,Abs)
+
+       /* Padding.*/
+      0x75, 0x01,                    //     REPORT_SIZE (1)
+     0x95, 0x02,                    //     REPORT_COUNT (2)
+      0x81, 0x03,                    //     INPUT (Constant,Var,Abs)
+
+
     0xc0,                          // END_COLLECTION
 
     0x05, 0x09,                    // USAGE_PAGE (Button)
     0x19, 0x01,                    //   USAGE_MINIMUM (Button 1)
-    0x29, 10,                    //   USAGE_MAXIMUM (Button 10)
+    0x29, 16,                    //   USAGE_MAXIMUM (Button 16)
     0x15, 0x00,                    //   LOGICAL_MINIMUM (0)
     0x25, 0x01,                    //   LOGICAL_MAXIMUM (1)
     0x75, 0x01,                    // REPORT_SIZE (1)
-    0x95, 10,                    // REPORT_COUNT (17)
+    0x95, 8,                    // REPORT_COUNT (16)
     0x81, 0x02,                    // INPUT (Data,Var,Abs)
-
-	/* Padding.*/
-	0x75, 0x01,                    //     REPORT_SIZE (1)
-	0x95, 0x06,                    //     REPORT_COUNT (6)
-	0x81, 0x03,                    //     INPUT (Constant,Var,Abs)
 
     0xc0                           // END_COLLECTION
 };

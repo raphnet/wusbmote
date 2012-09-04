@@ -26,7 +26,7 @@
 #include "i2c_gamepad.h"
 #include "i2c.h"
 
-#define REPORT_SIZE		6
+#define REPORT_SIZE		7
 
 #define I2C_ADDRESS		0x52
 
@@ -104,9 +104,23 @@ static void i2cGamepad_Update(void)
 			_delay_us(400);
 
 			last_read_controller_bytes[0] = buf[0];
-			last_read_controller_bytes[1] = buf[1];
-			last_read_controller_bytes[2] = buf[2];
-			last_read_controller_bytes[3] = buf[3];
+			last_read_controller_bytes[1] = buf[1] ^ 0xff;
+
+
+			last_read_controller_bytes[2] = (buf[5] & 0x0C) >> 2;
+			last_read_controller_bytes[2] |= buf[2] << 2;
+			last_read_controller_bytes[3] = buf[2] >> 6;
+
+			last_read_controller_bytes[3] |= (buf[5] & 0x30) << 2;
+			last_read_controller_bytes[3] |= (buf[3] << 4);
+			last_read_controller_bytes[4] = buf[3] >> 4;
+
+			last_read_controller_bytes[4] |= (buf[5] & 0xC0) << 4;
+			last_read_controller_bytes[4] |= buf[4] << 6;
+			last_read_controller_bytes[5] = buf[4] >> 2;
+
+			
+			last_read_controller_bytes[6] = (buf[5] & 0x03) ^ 0x03;
 
 			break;
 	}
@@ -159,11 +173,11 @@ static void i2cGamepad_BuildReport(unsigned char *reportBuffer)
 			REPORT_SIZE);	
 }
 
-#include "report_desc_4axes_10btns.c"
+#include "report_desc_5axes_16btns.c"
 
 Gamepad i2cGamepad_Gamepad = {
 	report_size: 		REPORT_SIZE,
-	reportDescriptorSize:	sizeof(usbHidReportDescriptor_4axes_10btns),
+	reportDescriptorSize:	sizeof(usbHidReportDescriptor_5axes_16btns),
 	init: 			i2cGamepad_Init,
 	update: 		i2cGamepad_Update,
 	changed:		i2cGamepad_Changed,
@@ -172,7 +186,7 @@ Gamepad i2cGamepad_Gamepad = {
 
 Gamepad *i2cGamepad_GetGamepad(void)
 {
-	i2cGamepad_Gamepad.reportDescriptor = (void*)usbHidReportDescriptor_4axes_10btns;
+	i2cGamepad_Gamepad.reportDescriptor = (void*)usbHidReportDescriptor_5axes_16btns;
 
 	return &i2cGamepad_Gamepad;
 }
