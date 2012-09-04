@@ -132,7 +132,7 @@ static void hardwareInit(void)
 
 }
 
-static uchar    reportBuffer[6];    /* buffer for HID reports */
+static uchar    reportBuffer[10];    /* buffer for HID reports */
 
 
 
@@ -190,6 +190,28 @@ uchar	usbFunctionSetup(uchar data[8])
 }
 
 /* ------------------------------------------------------------------------- */
+
+void transferGamepadReport(void)
+{
+	if (usbInterruptIsReady())
+	{ 	
+		char len;
+		int xfer_len;
+		int j;
+
+		curGamepad->buildReport(reportBuffer);
+
+		usbSetInterrupt(reportBuffer, 8);
+		while (!usbInterruptIsReady()) {
+			usbPoll(); wdt_reset();
+		}
+		usbSetInterrupt(reportBuffer + 8, 0);
+		while (!usbInterruptIsReady()) {
+			usbPoll(); wdt_reset();
+		}
+	}
+}
+
 
 
 int main(void)
@@ -275,20 +297,14 @@ int main(void)
 		}
 		
 			
-		if(must_report)
+		if(must_report && usbInterruptIsReady())
 		{
-			if (usbInterruptIsReady())
-			{ 	
-
+			transferGamepadReport();
 			must_report = 0;
-
-			curGamepad->buildReport(reportBuffer);
-			usbSetInterrupt(reportBuffer, curGamepad->report_size);
-			}
 		}
 		/*	
 		if(must_report && usbInterruptIsReady()){
-			must_report = 0;
+		yy	must_report = 0;
 
 			curGamepad->buildReport(reportBuffer);
 			usbSetInterrupt(reportBuffer, curGamepad->report_size);

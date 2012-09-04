@@ -139,7 +139,7 @@ LOAD /usr/lib/gcc/avr/4.3.5/avr4/libgcc.a
 .rela.plt
  *(.rela.plt)
 
-.text           0x00000000      0xb88
+.text           0x00000000      0xc1e
  *(.vectors)
  .vectors       0x00000000       0x26 /usr/lib/gcc/avr/4.3.5/../../../avr/lib/avr4/crtm8.o
                 0x00000000                __vectors
@@ -153,44 +153,43 @@ LOAD /usr/lib/gcc/avr/4.3.5/avr4/libgcc.a
                 0x00000042                usbDescriptorStringDevice
  .progmem.data  0x00000058        0xa main.o
                 0x00000058                usbDescriptorStringSerialNumber
- .progmem.data  0x00000062       0x35 i2c_gamepad.o
- .progmem.data  0x00000097       0x12 devdesc.o
-                0x00000097                usbDescrDevice
-                0x000000aa                . = ALIGN (0x2)
- *fill*         0x000000a9        0x1 00
-                0x000000aa                __trampolines_start = .
+ .progmem.data  0x00000062       0x42 i2c_gamepad.o
+ .progmem.data  0x000000a4       0x12 devdesc.o
+                0x000000a4                usbDescrDevice
+                0x000000b6                . = ALIGN (0x2)
+                0x000000b6                __trampolines_start = .
  *(.trampolines)
- .trampolines   0x000000aa        0x0 linker stubs
+ .trampolines   0x000000b6        0x0 linker stubs
  *(.trampolines*)
-                0x000000aa                __trampolines_end = .
+                0x000000b6                __trampolines_end = .
  *(.jumptables)
  *(.jumptables*)
  *(.lowtext)
  *(.lowtext*)
-                0x000000aa                __ctors_start = .
+                0x000000b6                __ctors_start = .
  *(.ctors)
-                0x000000aa                __ctors_end = .
-                0x000000aa                __dtors_start = .
+                0x000000b6                __ctors_end = .
+                0x000000b6                __dtors_start = .
  *(.dtors)
-                0x000000aa                __dtors_end = .
+                0x000000b6                __dtors_end = .
  SORT(*)(.ctors)
  SORT(*)(.dtors)
  *(.init0)
- .init0         0x000000aa        0x0 /usr/lib/gcc/avr/4.3.5/../../../avr/lib/avr4/crtm8.o
-                0x000000aa                __init
+ .init0         0x000000b6        0x0 /usr/lib/gcc/avr/4.3.5/../../../avr/lib/avr4/crtm8.o
+                0x000000b6                __init
  *(.init0)
  *(.init1)
  *(.init1)
  *(.init2)
- .init2         0x000000aa        0xc /usr/lib/gcc/avr/4.3.5/../../../avr/lib/avr4/crtm8.o
+ .init2         0x000000b6        0xc /usr/lib/gcc/avr/4.3.5/../../../avr/lib/avr4/crtm8.o
  *(.init2)
  *(.init3)
  *(.init3)
  *(.init4)
- .init4         0x000000b6       0x16 /usr/lib/gcc/avr/4.3.5/avr4/libgcc.a(_copy_data.o)
-                0x000000b6                __do_copy_data
- .init4         0x000000cc       0x10 /usr/lib/gcc/avr/4.3.5/avr4/libgcc.a(_clear_bss.o)
-                0x000000cc                __do_clear_bss
+ .init4         0x000000c2       0x16 /usr/lib/gcc/avr/4.3.5/avr4/libgcc.a(_copy_data.o)
+                0x000000c2                __do_copy_data
+ .init4         0x000000d8       0x10 /usr/lib/gcc/avr/4.3.5/avr4/libgcc.a(_clear_bss.o)
+                0x000000d8                __do_clear_bss
  *(.init4)
  *(.init5)
  *(.init5)
@@ -201,65 +200,66 @@ LOAD /usr/lib/gcc/avr/4.3.5/avr4/libgcc.a
  *(.init8)
  *(.init8)
  *(.init9)
- .init9         0x000000dc        0x4 /usr/lib/gcc/avr/4.3.5/../../../avr/lib/avr4/crtm8.o
+ .init9         0x000000e8        0x4 /usr/lib/gcc/avr/4.3.5/../../../avr/lib/avr4/crtm8.o
  *(.init9)
  *(.text)
- .text          0x000000e0        0x2 /usr/lib/gcc/avr/4.3.5/../../../avr/lib/avr4/crtm8.o
-                0x000000e0                __vector_12
-                0x000000e0                __bad_interrupt
-                0x000000e0                __vector_6
-                0x000000e0                __vector_3
-                0x000000e0                __vector_11
-                0x000000e0                __vector_13
-                0x000000e0                __vector_17
-                0x000000e0                __vector_7
-                0x000000e0                __vector_5
-                0x000000e0                __vector_4
-                0x000000e0                __vector_9
-                0x000000e0                __vector_2
-                0x000000e0                __vector_15
-                0x000000e0                __vector_8
-                0x000000e0                __vector_14
-                0x000000e0                __vector_10
-                0x000000e0                __vector_16
-                0x000000e0                __vector_18
- .text          0x000000e2      0x282 usbdrv/usbdrv.o
-                0x000000e2                usbInit
-                0x000000f6                usbPoll
-                0x0000031e                usbSetInterrupt
- .text          0x00000364      0x300 usbdrv/usbdrvasm.o
-                0x00000364                usbCrc16
-                0x00000396                usbCrc16Append
-                0x0000039e                __vector_1
- .text          0x00000664        0x0 usbdrv/oddebug.o
- .text          0x00000664      0x220 main.o
-                0x00000664                usbFunctionDescriptor
-                0x000006c0                usbFunctionSetup
-                0x00000720                main
- .text          0x00000884      0x19a i2c_gamepad.o
-                0x00000884                i2cGamepad_GetGamepad
- .text          0x00000a1e        0x6 devdesc.o
-                0x00000a1e                getUsbDescrDevice_size
- .text          0x00000a24      0x146 i2c.o
-                0x00000a24                i2c_init
-                0x00000a4e                i2c_transaction
- .text          0x00000b6a        0x0 /usr/lib/gcc/avr/4.3.5/avr4/libgcc.a(_exit.o)
- .text          0x00000b6a        0x0 /usr/lib/gcc/avr/4.3.5/avr4/libgcc.a(_copy_data.o)
- .text          0x00000b6a        0x0 /usr/lib/gcc/avr/4.3.5/avr4/libgcc.a(_clear_bss.o)
- .text          0x00000b6a        0x0 /usr/lib/gcc/avr/4.3.5/../../../avr/lib/avr4/libc.a(memcmp.o)
-                0x00000b6a                . = ALIGN (0x2)
+ .text          0x000000ec        0x2 /usr/lib/gcc/avr/4.3.5/../../../avr/lib/avr4/crtm8.o
+                0x000000ec                __vector_12
+                0x000000ec                __bad_interrupt
+                0x000000ec                __vector_6
+                0x000000ec                __vector_3
+                0x000000ec                __vector_11
+                0x000000ec                __vector_13
+                0x000000ec                __vector_17
+                0x000000ec                __vector_7
+                0x000000ec                __vector_5
+                0x000000ec                __vector_4
+                0x000000ec                __vector_9
+                0x000000ec                __vector_2
+                0x000000ec                __vector_15
+                0x000000ec                __vector_8
+                0x000000ec                __vector_14
+                0x000000ec                __vector_10
+                0x000000ec                __vector_16
+                0x000000ec                __vector_18
+ .text          0x000000ee      0x282 usbdrv/usbdrv.o
+                0x000000ee                usbInit
+                0x00000102                usbPoll
+                0x0000032a                usbSetInterrupt
+ .text          0x00000370      0x300 usbdrv/usbdrvasm.o
+                0x00000370                usbCrc16
+                0x000003a2                usbCrc16Append
+                0x000003aa                __vector_1
+ .text          0x00000670        0x0 usbdrv/oddebug.o
+ .text          0x00000670      0x248 main.o
+                0x00000670                usbFunctionDescriptor
+                0x000006cc                usbFunctionSetup
+                0x0000072c                transferGamepadReport
+                0x00000776                main
+ .text          0x000008b8      0x1fc i2c_gamepad.o
+                0x000008b8                i2cGamepad_GetGamepad
+ .text          0x00000ab4        0x6 devdesc.o
+                0x00000ab4                getUsbDescrDevice_size
+ .text          0x00000aba      0x146 i2c.o
+                0x00000aba                i2c_init
+                0x00000ae4                i2c_transaction
+ .text          0x00000c00        0x0 /usr/lib/gcc/avr/4.3.5/avr4/libgcc.a(_exit.o)
+ .text          0x00000c00        0x0 /usr/lib/gcc/avr/4.3.5/avr4/libgcc.a(_copy_data.o)
+ .text          0x00000c00        0x0 /usr/lib/gcc/avr/4.3.5/avr4/libgcc.a(_clear_bss.o)
+ .text          0x00000c00        0x0 /usr/lib/gcc/avr/4.3.5/../../../avr/lib/avr4/libc.a(memcmp.o)
+                0x00000c00                . = ALIGN (0x2)
  *(.text.*)
- .text.libgcc   0x00000b6a        0x0 /usr/lib/gcc/avr/4.3.5/avr4/libgcc.a(_exit.o)
- .text.libgcc   0x00000b6a        0x0 /usr/lib/gcc/avr/4.3.5/avr4/libgcc.a(_copy_data.o)
- .text.libgcc   0x00000b6a        0x0 /usr/lib/gcc/avr/4.3.5/avr4/libgcc.a(_clear_bss.o)
+ .text.libgcc   0x00000c00        0x0 /usr/lib/gcc/avr/4.3.5/avr4/libgcc.a(_exit.o)
+ .text.libgcc   0x00000c00        0x0 /usr/lib/gcc/avr/4.3.5/avr4/libgcc.a(_copy_data.o)
+ .text.libgcc   0x00000c00        0x0 /usr/lib/gcc/avr/4.3.5/avr4/libgcc.a(_clear_bss.o)
  .text.avr-libc
-                0x00000b6a       0x1a /usr/lib/gcc/avr/4.3.5/../../../avr/lib/avr4/libc.a(memcmp.o)
-                0x00000b6a                memcmp
-                0x00000b84                . = ALIGN (0x2)
+                0x00000c00       0x1a /usr/lib/gcc/avr/4.3.5/../../../avr/lib/avr4/libc.a(memcmp.o)
+                0x00000c00                memcmp
+                0x00000c1a                . = ALIGN (0x2)
  *(.fini9)
- .fini9         0x00000b84        0x0 /usr/lib/gcc/avr/4.3.5/avr4/libgcc.a(_exit.o)
-                0x00000b84                exit
-                0x00000b84                _exit
+ .fini9         0x00000c1a        0x0 /usr/lib/gcc/avr/4.3.5/avr4/libgcc.a(_exit.o)
+                0x00000c1a                exit
+                0x00000c1a                _exit
  *(.fini9)
  *(.fini8)
  *(.fini8)
@@ -278,11 +278,11 @@ LOAD /usr/lib/gcc/avr/4.3.5/avr4/libgcc.a
  *(.fini1)
  *(.fini1)
  *(.fini0)
- .fini0         0x00000b84        0x4 /usr/lib/gcc/avr/4.3.5/avr4/libgcc.a(_exit.o)
+ .fini0         0x00000c1a        0x4 /usr/lib/gcc/avr/4.3.5/avr4/libgcc.a(_exit.o)
  *(.fini0)
-                0x00000b88                _etext = .
+                0x00000c1e                _etext = .
 
-.data           0x00800060       0x3a load address 0x00000b88
+.data           0x00800060       0x3a load address 0x00000c1e
                 0x00800060                PROVIDE (__data_start, .)
  *(.data)
  .data          0x00800060        0x0 /usr/lib/gcc/avr/4.3.5/../../../avr/lib/avr4/crtm8.o
@@ -311,46 +311,46 @@ LOAD /usr/lib/gcc/avr/4.3.5/avr4/libgcc.a
                 0x0080009a                _edata = .
                 0x0080009a                PROVIDE (__data_end, .)
 
-.bss            0x0080009a       0x53
+.bss            0x0080009a       0x5b
                 0x0080009a                PROVIDE (__bss_start, .)
  *(.bss)
  .bss           0x0080009a        0x0 /usr/lib/gcc/avr/4.3.5/../../../avr/lib/avr4/crtm8.o
  .bss           0x0080009a        0x1 usbdrv/usbdrv.o
  .bss           0x0080009b        0x0 usbdrv/usbdrvasm.o
  .bss           0x0080009b        0x0 usbdrv/oddebug.o
- .bss           0x0080009b       0x10 main.o
+ .bss           0x0080009b       0x14 main.o
                 0x0080009b                usbDescriptorConfiguration
- .bss           0x008000ab        0xd i2c_gamepad.o
- .bss           0x008000b8        0x0 devdesc.o
- .bss           0x008000b8        0x0 i2c.o
- .bss           0x008000b8        0x0 /usr/lib/gcc/avr/4.3.5/avr4/libgcc.a(_exit.o)
- .bss           0x008000b8        0x0 /usr/lib/gcc/avr/4.3.5/avr4/libgcc.a(_copy_data.o)
- .bss           0x008000b8        0x0 /usr/lib/gcc/avr/4.3.5/avr4/libgcc.a(_clear_bss.o)
- .bss           0x008000b8        0x0 /usr/lib/gcc/avr/4.3.5/../../../avr/lib/avr4/libc.a(memcmp.o)
+ .bss           0x008000af       0x11 i2c_gamepad.o
+ .bss           0x008000c0        0x0 devdesc.o
+ .bss           0x008000c0        0x0 i2c.o
+ .bss           0x008000c0        0x0 /usr/lib/gcc/avr/4.3.5/avr4/libgcc.a(_exit.o)
+ .bss           0x008000c0        0x0 /usr/lib/gcc/avr/4.3.5/avr4/libgcc.a(_copy_data.o)
+ .bss           0x008000c0        0x0 /usr/lib/gcc/avr/4.3.5/avr4/libgcc.a(_clear_bss.o)
+ .bss           0x008000c0        0x0 /usr/lib/gcc/avr/4.3.5/../../../avr/lib/avr4/libc.a(memcmp.o)
  *(.bss*)
  *(COMMON)
- COMMON         0x008000b8       0x35 usbdrv/usbdrv.o
-                0x008000b8                usbTxBuf
-                0x008000c3                usbTxBuf1
-                0x008000ce                usbDeviceAddr
-                0x008000cf                usbRxToken
-                0x008000d0                usbInputBufOffset
-                0x008000d1                usbMsgPtr
-                0x008000d3                usbRxLen
-                0x008000d4                usbNewDeviceAddr
-                0x008000d5                usbCurrentTok
-                0x008000d6                usbConfiguration
-                0x008000d7                usbRxBuf
-                0x008000ed                PROVIDE (__bss_end, .)
-                0x00000b88                __data_load_start = LOADADDR (.data)
-                0x00000bc2                __data_load_end = (__data_load_start + SIZEOF (.data))
+ COMMON         0x008000c0       0x35 usbdrv/usbdrv.o
+                0x008000c0                usbTxBuf
+                0x008000cb                usbTxBuf1
+                0x008000d6                usbDeviceAddr
+                0x008000d7                usbRxToken
+                0x008000d8                usbInputBufOffset
+                0x008000d9                usbMsgPtr
+                0x008000db                usbRxLen
+                0x008000dc                usbNewDeviceAddr
+                0x008000dd                usbCurrentTok
+                0x008000de                usbConfiguration
+                0x008000df                usbRxBuf
+                0x008000f5                PROVIDE (__bss_end, .)
+                0x00000c1e                __data_load_start = LOADADDR (.data)
+                0x00000c58                __data_load_end = (__data_load_start + SIZEOF (.data))
 
-.noinit         0x008000ed        0x0
-                0x008000ed                PROVIDE (__noinit_start, .)
+.noinit         0x008000f5        0x0
+                0x008000f5                PROVIDE (__noinit_start, .)
  *(.noinit*)
-                0x008000ed                PROVIDE (__noinit_end, .)
-                0x008000ed                _end = .
-                0x008000ed                PROVIDE (__heap_start, .)
+                0x008000f5                PROVIDE (__noinit_end, .)
+                0x008000f5                _end = .
+                0x008000f5                PROVIDE (__heap_start, .)
 
 .eeprom         0x00810000        0x0
  *(.eeprom*)

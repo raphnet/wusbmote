@@ -19,13 +19,14 @@
  */
 
 /*
- * [0] X
- * [1] Y
- * [2] RX
- * [3] RY
- * [4] RZ
- * [5] Btn 0-7
- * [6] Btn 8-15
+ * [0] X		// 8 bit
+ * [1] Y		// 8 bit
+ * [2] RX		// 10 bit
+ * [3] RX,RY	// 10 bit
+ * [4] RY,RZ	// 10 bit
+ * [5] RZ		
+ * [6] Btn 0-7
+ * [7] Btn 8-15
  * 
  *
  */
@@ -56,11 +57,10 @@ static const char usbHidReportDescriptor_5axes_16btns[] PROGMEM = {
 
     0x81, 0x02,                    //   INPUT (Data,Var,Abs)
 
-       /* Padding.*/
-      0x75, 0x01,                    //     REPORT_SIZE (1)
-     0x95, 0x02,                    //     REPORT_COUNT (2)
-      0x81, 0x03,                    //     INPUT (Constant,Var,Abs)
-
+	/* Padding.*/
+	0x75, 0x01,                    //     REPORT_SIZE (1)
+	0x95, 0x02,                    //     REPORT_COUNT (2)
+	0x81, 0x03,                    //     INPUT (Constant,Var,Abs)
 
     0xc0,                          // END_COLLECTION
 
@@ -70,7 +70,7 @@ static const char usbHidReportDescriptor_5axes_16btns[] PROGMEM = {
     0x15, 0x00,                    //   LOGICAL_MINIMUM (0)
     0x25, 0x01,                    //   LOGICAL_MAXIMUM (1)
     0x75, 0x01,                    // REPORT_SIZE (1)
-    0x95, 8,                    // REPORT_COUNT (16)
+    0x95, 16,                    // REPORT_COUNT (16)
     0x81, 0x02,                    // INPUT (Data,Var,Abs)
 
     0xc0                           // END_COLLECTION

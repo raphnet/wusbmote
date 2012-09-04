@@ -26,7 +26,7 @@
 #include "i2c_gamepad.h"
 #include "i2c.h"
 
-#define REPORT_SIZE		7
+#define REPORT_SIZE		8
 
 #define I2C_ADDRESS		0x52
 
