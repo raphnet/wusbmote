@@ -27,7 +27,32 @@
 #include "i2c.h"
 
 #define REPORT_SIZE		8
-#define I2C_ADDRESS		0x52
+
+/* The wiibrew documentation talks about writing to 0x(4)a400xx, reading from 0x(4)a500xx.
+ *
+ * In binary: 
+ * 0xa4..  1010 0100
+ * 0xa5..  1010 0101  
+ *
+ * It is clear that A4 and A5 is the first 8 bits of the I2C transaction. The least
+ * significant bit is the I2C R/W bit.
+ * 
+ * This translates to a 0x52 7bit address (0xa4>>1)
+ *
+ * Now the Wii motion plus documentation mentions 0x(4)A6000 
+ * (http://wiibrew.org/wiki/Wiimote/Extension_Controllers/Wii_Motion_Plus)
+ *
+ * So we have in binary:
+ * 0xa6..  1010 0110
+ *
+ * The wii motion plus I2C 7 bit address is therfore 0x53.
+ *
+ * The document then explains the wii motion plus can be made to answer at 0xa4 
+ * by wrigin 0x04 to register 0xFE. 
+ */
+
+#define I2C_STANDARD_ADDRESS	0x52
+#define I2C_W2I_MPLUS_ADDRESS	0x53
 
 // report matching the most recent bytes from the controller
 static unsigned char last_read_controller_bytes[REPORT_SIZE];
@@ -50,8 +75,10 @@ static unsigned char last_reported_controller_bytes[REPORT_SIZE];
 
 static char state = STATE_INIT;
 
+// Based on reading 0xFE and 0xFF. This might be wrong...
 #define ID_NUNCHUCK	0x0000
 #define ID_CLASSIC	0x0101
+#define ID_MPLUS	0x0405
 
 static unsigned short peripheral_id = ID_NUNCHUCK;
 
@@ -70,7 +97,7 @@ static void pulseres(int res)
 	}
 }
 
-static char w2i_reg_writeByte(unsigned char reg_addr, unsigned char value)
+static char w2i_reg_writeByte(unsigned char i2c_addr, unsigned char reg_addr, unsigned char value)
 {
 	unsigned char tmpbuf[2];
 	char res;
@@ -78,7 +105,7 @@ static char w2i_reg_writeByte(unsigned char reg_addr, unsigned char value)
 	tmpbuf[0] = reg_addr;
 	tmpbuf[1] = value;
 
-	res = i2c_transaction(I2C_ADDRESS, 2, tmpbuf, 0, NULL, 0);
+	res = i2c_transaction(i2c_addr, 2, tmpbuf, 0, NULL, 0);
 	_delay_us(400);
 
 	return res;
@@ -88,13 +115,13 @@ static char w2i_reg_readBlock(unsigned char reg_addr, unsigned char *dst, int le
 {
 	char res;
 
-	res = i2c_transaction(I2C_ADDRESS, 1, &reg_addr, 0, NULL, 0);
+	res = i2c_transaction(I2C_STANDARD_ADDRESS, 1, &reg_addr, 0, NULL, 0);
 	if (res)
 		return res;
 
 	_delay_us(400);
 
-	res = i2c_transaction(I2C_ADDRESS, 0, NULL, len, dst, 0);
+	res = i2c_transaction(I2C_STANDARD_ADDRESS, 0, NULL, len, dst, 0);
 	if (res)
 		return res;
 
@@ -129,24 +156,29 @@ static void i2cGamepad_Update(void)
 	{
 
 		case STATE_INIT:
+			// For now, we consider everything answering at this address to be the motion plus.
+			// This switches the mplus to the standard address.
+			res = w2i_reg_writeByte(I2C_W2I_MPLUS_ADDRESS, 0xFE, 0x04);
+			// ignore failure
+
 			//
 			// Init sequence from:
 			//
 			// http://wiibrew.org/wiki/Wiimote/Extension_Controllers
 			//	
-			res = w2i_reg_writeByte(W2I_REG_UNKNOWN_F0, 0x55);
+			res = w2i_reg_writeByte(I2C_STANDARD_ADDRESS, W2I_REG_UNKNOWN_F0, 0x55);
 			if (res)
 				return;
 			
-			res = w2i_reg_writeByte(W2I_REG_UNKNOWN_FB, 0x00);
+			res = w2i_reg_writeByte(I2C_STANDARD_ADDRESS, W2I_REG_UNKNOWN_FB, 0x00);
 			if (res)		
 				return;
-		
+	
 			res = w2i_reg_readBlock(W2I_REG_ID_L, buf, 2);
 			if (res)
 				return;	
 
-			peripheral_id = buf[0] | buf[1]<<8;
+			peripheral_id = buf[1] | buf[0]<<8;
 			
 			state = STATE_READ_DATA;
 			_delay_ms(1000);
@@ -219,7 +251,13 @@ static void i2cGamepad_Update(void)
 					if (!(buf[4] & 0x10)) btns_h |= 0x20; // SELECT
 					if (!(buf[4] & 0x08)) btns_h |= 0x40; // HOME
 					break;
-
+				
+				case ID_MPLUS:
+					// not very useful now, we are missing bits.
+					rx = (buf[0] | (buf[3]<<8));
+					ry = (buf[1] | (buf[4]<<8));
+					rz = (buf[2] | (buf[5]<<8));
+					break;
 			}
 			break;
 	}
