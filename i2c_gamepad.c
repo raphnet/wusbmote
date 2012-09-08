@@ -151,11 +151,14 @@ static void i2cGamepad_Update(void)
 	unsigned char x=0x80,y=0x80;
 	unsigned char btns_l=0, btns_h=0;
 	unsigned short rx=0x200,ry=0x200,rz=0x200;
+	static char mplus_cal = 0;
 
 	switch (state)
 	{
 
 		case STATE_INIT:
+			mplus_cal =0;
+
 			// For now, we consider everything answering at this address to be the motion plus.
 			// This switches the mplus to the standard address.
 			res = w2i_reg_writeByte(I2C_W2I_MPLUS_ADDRESS, 0xFE, 0x04);
@@ -253,10 +256,55 @@ static void i2cGamepad_Update(void)
 					break;
 				
 				case ID_MPLUS:
-					// not very useful now, we are missing bits.
-					rx = (buf[0] | (buf[3]<<8));
-					ry = (buf[1] | (buf[4]<<8));
-					rz = (buf[2] | (buf[5]<<8));
+					{
+						static short cal_rrx, cal_rry, cal_rrz;
+						short rrx, rry, rrz;
+
+#define SAT_10BIT_SIGNED(v)	do { if ((v) > 0x1FF)  (v) = 0x1ff; else if ((v) < -0x1FF) (v)= -0x1ff; } while(0)
+
+						rrx = (buf[0] | ((buf[3]&0xFC)<<6)) << 2;
+						rry = (buf[1] | ((buf[4]&0xFC)<<6)) << 2;
+						rrz = (buf[2] | ((buf[5]&0xFC)<<6)) << 2;
+
+						// convert to signed value
+						rrx ^= 0x8000;
+						rry ^= 0x8000;
+						rrz ^= 0x8000;
+
+						// zero values on origin	
+						if (mplus_cal < 10) {
+							mplus_cal++;
+							cal_rrx = rrx;
+							cal_rry = rry;
+							cal_rrz = rrz;
+						}
+
+						rrx -= cal_rrx;
+						rry -= cal_rry;
+						rrz -= cal_rrz;
+
+						// We have a 14 bit value to fit in a 10 bit report.
+						//
+						// A shift of 6 keeps the high order bits (detects stronger motions)
+						// A shift of 0 keeps the low order bits (detects very small motions)
+						rrx >>= 5;
+						rry >>= 5;
+						rrz >>= 5;
+
+						SAT_10BIT_SIGNED(rrx);
+						SAT_10BIT_SIGNED(rry);
+						SAT_10BIT_SIGNED(rrz);
+						
+						rx = rrx ^ 0x200;
+						ry = rry ^ 0x200;
+						rz = rrz ^ 0x200;
+					
+						if (!(buf[3] & 0x02)) btns_l |= 0x01;
+						if (!(buf[3] & 0x01)) btns_l |= 0x02;
+						if (!(buf[4] & 0x02)) btns_l |= 0x04;
+						if ((buf[4] & 0x01)) btns_l |= 0x08; // extension connected
+					}
+
 					break;
 			}
 			break;
