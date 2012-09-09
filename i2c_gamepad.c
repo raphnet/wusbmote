@@ -75,6 +75,9 @@ static unsigned char last_reported_controller_bytes[REPORT_SIZE];
 
 static char state = STATE_INIT;
 
+#define FLAG_NO_ANALOG_SLIDERS		1
+static unsigned char current_flags = FLAG_NO_ANALOG_SLIDERS;
+
 // Based on reading 0xFE and 0xFF. This might be wrong...
 #define ID_NUNCHUCK	0x0000
 #define ID_CLASSIC	0x0101
@@ -82,20 +85,7 @@ static char state = STATE_INIT;
 
 static unsigned short peripheral_id = ID_NUNCHUCK;
 
-static void pulseres(int res)
-{
-	int i;
-	
-	DEBUGLOW();
-	_delay_us(24);
-		
-	for (i=0; i<res; i++)  {
-		DEBUGHIGH();
-		_delay_us(5);
-		DEBUGLOW();
-		_delay_us(5);
-	}
-}
+
 
 static char w2i_reg_writeByte(unsigned char i2c_addr, unsigned char reg_addr, unsigned char value)
 {
@@ -152,6 +142,8 @@ static void i2cGamepad_Update(void)
 	unsigned char btns_l=0, btns_h=0;
 	unsigned short rx=0x200,ry=0x200,rz=0x200;
 	static char mplus_cal = 0;
+	static char device_changed = 0;
+	static int home_count = 0;
 
 	switch (state)
 	{
@@ -184,6 +176,7 @@ static void i2cGamepad_Update(void)
 			peripheral_id = buf[1] | buf[0]<<8;
 			
 			state = STATE_READ_DATA;
+			device_changed = 1;
 			_delay_ms(1000);
 			break;
 
@@ -235,6 +228,7 @@ static void i2cGamepad_Update(void)
 					rx = ((buf[2]>>7) | ((buf[1]&0xC0)>>5) | ((buf[0]&0xC0)>>3)) << 5;
 					ry = ((buf[2]&0x1f) << 5) ^ 0x3FF;
 					rz = ((buf[3]>>5) | ((buf[2] & 0x60) >> 2) ) << 5;
+					rz ^= 0xffff;
 			
 					// The fist 12 USB button IDs follow the assignments of my Gamecube to USB adapter project.
 					if (!(buf[4] & 0x04)) btns_l |= 0x01; // +/Start
@@ -253,6 +247,34 @@ static void i2cGamepad_Update(void)
 					if (!(buf[5] & 0x80)) btns_h |= 0x10; // Zl
 					if (!(buf[4] & 0x10)) btns_h |= 0x20; // SELECT
 					if (!(buf[4] & 0x08)) btns_h |= 0x40; // HOME
+
+					if (device_changed) {
+						device_changed = 0;
+
+						// Holding the HOME button enables the troublesome L slider
+						if (btns_h & 0x40) { // HOME
+							current_flags &= ~FLAG_NO_ANALOG_SLIDERS;
+						} else {
+							current_flags |= FLAG_NO_ANALOG_SLIDERS;
+						}
+					}
+#define HOME_HOLD_COUNT	180
+					// Holding HOME for 3 seconds toggles the enabled state of the L slider
+					if (btns_h & 0x40) {
+						if (home_count < HOME_HOLD_COUNT) { // approx. 3 sec.
+							home_count++;
+						} else if (home_count==HOME_HOLD_COUNT) {
+							current_flags ^= FLAG_NO_ANALOG_SLIDERS;
+							home_count++;
+						}						
+					} else {
+						home_count=0;
+					}
+
+					if (current_flags & FLAG_NO_ANALOG_SLIDERS) {
+						rz = 0x200;
+					}
+
 					break;
 				
 				case ID_MPLUS:
@@ -306,8 +328,10 @@ static void i2cGamepad_Update(void)
 					}
 
 					break;
-			}
-			break;
+			} // switch peripheral_id
+			
+
+			break; // STATE
 	}
 
 	setLastValues(x,y,rx,ry,rz,btns_l,btns_h);
@@ -332,7 +356,6 @@ static void i2cGamepad_Init(void)
 	i2c_init(I2C_FLAG_EXTERNAL_PULLUP, 52); 
 
 	i2cGamepad_Update();
-	// TODO: Add alt mappings test here
 
 	DDRC |= 0x01;
 	DEBUGLOW();
