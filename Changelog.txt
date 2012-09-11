@@ -1,30 +1,17 @@
---- v1.0 (May 2, 2009)
-	- Initial release under GPLv2. 
-	- Supports 1 alternate mapping. Hold 'Start' at power-up.
 
+-- September 9, 2012: Version 1.0
+Initial release:
+  - Supports the Wii Nunchuck at its full resolution (8 bit for the XY
+    joystick and 10bit for the accelerometers)
+  
+  - Supports the Wii classic controller (Tested RVL-005 and RVL-005(-02).
+    By default, the analogic L slider is disabled. Hold HOME for 3 seconds
+	to toggle between enabled/disabled. (Required to complete button
+	assignment in many games)
 
-	Connect Clock to PC5
-	Connect Latch to PC4
-	Connect Data to PC3
-	Connect Pin2 (+5volts) to 5 volts
-	Connect Ground to Ground...
+  - Partial support for the Wii motion plus. Connecting a peripheral to the
+    Wii motion plus is NOT supported. Yaw, Roll and Pitch speeds scaled down
+	to fit in the 10 bit USB report which severely limits precision.
 
-	Do not connect Vbat.
-
-
-Pin  Color   Name
------------------------------------
- 1   Yellow  Data
- 2   Blue    +5 volts
- 3   Brown   Reset (Latch)
- 4   Orange  Clock
- 5   Black   Ground
- 6   Red     Vbat (battery power)
-
- _________
-/ 3  2  1 \
-| 6  5  4 |
-'---------'
-(looking into cable)
-
+  - The connected peripheral can be changed on the fly.
 
