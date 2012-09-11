@@ -76,15 +76,15 @@ static unsigned char last_reported_controller_bytes[REPORT_SIZE];
 static char state = STATE_INIT;
 
 #define FLAG_NO_ANALOG_SLIDERS		1
-#define FLAG_NUNCHUCK_Z_DISABLED	2
+#define FLAG_NUNCHUK_Z_DISABLED	2
 static unsigned char current_flags = FLAG_NO_ANALOG_SLIDERS;
 
 // Based on reading 0xFE and 0xFF. This might be wrong...
-#define ID_NUNCHUCK	0x0000
+#define ID_NUNCHUK	0x0000
 #define ID_CLASSIC	0x0101
 #define ID_MPLUS	0x0405
 
-static unsigned short peripheral_id = ID_NUNCHUCK;
+static unsigned short peripheral_id = ID_NUNCHUK;
 
 
 
@@ -192,7 +192,7 @@ static void i2cGamepad_Update(void)
 			switch (peripheral_id)
 			{
 				default:
-				case ID_NUNCHUCK:
+				case ID_NUNCHUK:
 					// Source: http://wiibrew.org/wiki/Wiimote/Extension_Controllers/Nunchuck
 					//
 					//     7   6    5   4    3   2     1   0
@@ -219,13 +219,13 @@ static void i2cGamepad_Update(void)
 						// disables the Z axis (The gravity offset makes
 						// it tricky to map buttons in many emulators)
 						if ((btns_l & 0x03) == 0x03) { // HOME
-							current_flags |= FLAG_NUNCHUCK_Z_DISABLED;
+							current_flags |= FLAG_NUNCHUK_Z_DISABLED;
 						} else {
-							current_flags &= ~FLAG_NUNCHUCK_Z_DISABLED;
+							current_flags &= ~FLAG_NUNCHUK_Z_DISABLED;
 						}
 					}
 
-					if (current_flags & FLAG_NUNCHUCK_Z_DISABLED) {
+					if (current_flags & FLAG_NUNCHUK_Z_DISABLED) {
 						rz = 0x200;
 					}
 
