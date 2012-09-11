@@ -76,6 +76,7 @@ static unsigned char last_reported_controller_bytes[REPORT_SIZE];
 static char state = STATE_INIT;
 
 #define FLAG_NO_ANALOG_SLIDERS		1
+#define FLAG_NUNCHUCK_Z_DISABLED	2
 static unsigned char current_flags = FLAG_NO_ANALOG_SLIDERS;
 
 // Based on reading 0xFE and 0xFF. This might be wrong...
@@ -210,6 +211,24 @@ static void i2cGamepad_Update(void)
 					
 					if (!(buf[5]&0x01)) btns_l |= 0x01;
 					if (!(buf[5]&0x02)) btns_l |= 0x02;
+
+					if (device_changed) {
+						device_changed = 0;
+
+						// Holding both buttons at startup/connection
+						// disables the Z axis (The gravity offset makes
+						// it tricky to map buttons in many emulators)
+						if ((btns_l & 0x03) == 0x03) { // HOME
+							current_flags |= FLAG_NUNCHUCK_Z_DISABLED;
+						} else {
+							current_flags &= ~FLAG_NUNCHUCK_Z_DISABLED;
+						}
+					}
+
+					if (current_flags & FLAG_NUNCHUCK_Z_DISABLED) {
+						rz = 0x200;
+					}
+
 					break;
 
 				case ID_CLASSIC:
