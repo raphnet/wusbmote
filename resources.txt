@@ -1,5 +1,6 @@
 The following has been extremely useful:
 
+http://www.hardwarebook.info/Wiimote_Expansion_Port
 http://wiibrew.org/wiki/Wiimote/Extension_Controllers
 http://wiibrew.org/wiki/Wiimote/Extension_Controllers/Nunchuck
 http://wiibrew.org/wiki/Wiimote/Extension_Controllers/Classic_Controller
