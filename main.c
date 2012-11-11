@@ -117,7 +117,6 @@ static void hardwareInit(void)
 	/* Usb pin are init as outputs */
 	DDRD = 0x01 | 0x04;    
 
-	
 	j = 0;
 	while(--j){     /* USB Reset by device only required on Watchdog Reset */
 		i = 0;
@@ -195,10 +194,6 @@ void transferGamepadReport(void)
 {
 	if (usbInterruptIsReady())
 	{ 	
-		char len;
-		int xfer_len;
-		int j;
-
 		curGamepad->buildReport(reportBuffer);
 
 		usbSetInterrupt(reportBuffer, 8);
@@ -218,9 +213,6 @@ int main(void)
 {
 	char must_report = 0, first_run = 1;
 	uchar   idleCounter = 0;
-	int run_mode;
-
-	run_mode = (PINB & 0x06)>>1;
 
 	curGamepad = i2cGamepad_GetGamepad();
 	
