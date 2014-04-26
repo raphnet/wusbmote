@@ -1,5 +1,5 @@
-/*   USBTenki - Interfacing sensors to USB 
- *   Copyright (C) 2007-2011  Raphaël Assénat <raph@raphnet.net>
+/*   USBTenki - Interfacing sensors to USB
+ *   Copyright (C) 2007-2014  Raphaël Assénat <raph@raphnet.net>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -17,6 +17,8 @@
 #include <avr/io.h>
 #include <util/twi.h>
 #include <util/delay.h>
+#include <avr/pgmspace.h>
+#include "usbdrv.h"
 
 #include "i2c.h"
 
@@ -29,7 +31,7 @@ void i2c_init(int use_int_pullup, unsigned char twbr)
 		/* External pullups required */
 		PORTC &= ~((1<<5)|(1<<4));
 	}
-	
+
 	TWBR = twbr;
 	TWSR &= ~((1<<TWPS1)|(1<<TWPS0));
 }
@@ -37,19 +39,32 @@ void i2c_init(int use_int_pullup, unsigned char twbr)
 #define DEBUGLOW()      PORTC &= 0xFE
 #define DEBUGHIGH()     PORTC |= 0x01
 
-static unsigned char i2cWaitInt(void)
+static int i2cWaitInt(void)
 {
+	unsigned int t=25000;
+
 	DEBUGHIGH();
-	while (!(TWCR & (1<<TWINT))) 
-			{ /* do nothing */ }
+
+	while (!(TWCR & (1<<TWINT))) {
+		t--;
+		if (!t) {
+			DEBUGLOW();
+			return -1;
+		}
+		_delay_us(100);
+		usbPoll();
+	}
+
 	DEBUGLOW();
+
 	return TWSR & 0xF8;
 }
 
-int i2c_transaction(unsigned char addr, int wr_len, unsigned char *wr_data, 
+int i2c_transaction(unsigned char addr, int wr_len, unsigned char *wr_data,
 								int rd_len, unsigned char *rd_data, unsigned char flags)
 {
 	int ret =0;
+	int res;
 	unsigned char twsr;
 
 	if (wr_len==0 && rd_len==0)
@@ -60,29 +75,40 @@ int i2c_transaction(unsigned char addr, int wr_len, unsigned char *wr_data,
 		// Send a start condition
 		TWCR = (1<<TWINT)|(1<<TWSTA)|(1<<TWEN);
 
-		twsr = i2cWaitInt();
+		res = i2cWaitInt();
+		if (res <0) {
+			return -1;
+		}
+		twsr = res;
 //	DEBUGLOW();
 		if (twsr != TW_START)
 			return 1; // Failed
 
 		TWDR = (addr<<1) | 0;	/* Address + write(0) */
 		TWCR = (1<<TWINT)|(1<<TWEN);
-		
 
-		twsr = i2cWaitInt();
+		res = i2cWaitInt();
+		if (res <0) {
+			return -1;
+		}
+		twsr = res;
 		/* TWSR can be:
 		 * TW_MT_SLA_ACK, TW_MT_SLA_NACK or TW_MR_ARB_LOST */
 		if (twsr != TW_MT_SLA_ACK) {
 			ret = 2;
 			goto err;
 		}
-		
+
 		while (wr_len--)
 		{
 			TWDR = *wr_data;
 			TWCR = (1<<TWINT)|(1<<TWEN);
 
-			twsr = i2cWaitInt();
+			res = i2cWaitInt();
+			if (res <0) {
+				return -1;
+			}
+			twsr = res;
 			if (twsr != TW_MT_DATA_ACK) {
 				ret = 3;
 				goto err;
@@ -97,7 +123,11 @@ int i2c_transaction(unsigned char addr, int wr_len, unsigned char *wr_data,
 		/* Do a (repeated) start condition */
 		TWCR = (1<<TWINT)|(1<<TWSTA)|(1<<TWEN);
 
-		twsr = i2cWaitInt();
+		res = i2cWaitInt();
+		if (res <0) {
+			return -1;
+		}
+		twsr = res;
 		if ((twsr != TW_REP_START) && (twsr != TW_START) ) {
 			ret = 4;
 			goto err;
@@ -105,8 +135,12 @@ int i2c_transaction(unsigned char addr, int wr_len, unsigned char *wr_data,
 
 		TWDR = (addr<<1) | 1;	/* Address + read(1) */
 		TWCR = (1<<TWINT)|(1<<TWEN);
-		
-		twsr = i2cWaitInt();
+
+		res = i2cWaitInt();
+		if (res <0) {
+			return -1;
+		}
+		twsr = res;
 		/* TWSR can be:
 		 * TW_MR_SLA_ACK, TW_MR_SLA_NACK or TW_MR_ARB_LOST */
 		if (twsr != TW_MR_SLA_ACK) {
@@ -119,10 +153,14 @@ int i2c_transaction(unsigned char addr, int wr_len, unsigned char *wr_data,
 			if (rd_len)
 				TWCR = (1<<TWINT)|(1<<TWEN)|(1<<TWEA);
 			else
-				TWCR = (1<<TWINT)|(1<<TWEN);		
-			
-			twsr = i2cWaitInt();
-			if ((twsr != TW_MR_DATA_ACK) && (twsr != TW_MR_DATA_NACK) ) 
+				TWCR = (1<<TWINT)|(1<<TWEN);
+
+			res = i2cWaitInt();
+			if (res <0) {
+				return -1;
+			}
+			twsr = res;
+			if ((twsr != TW_MR_DATA_ACK) && (twsr != TW_MR_DATA_NACK) )
 			{
 				break;
 			}
@@ -134,7 +172,7 @@ int i2c_transaction(unsigned char addr, int wr_len, unsigned char *wr_data,
 
 	// Stop
 	TWCR = (1<<TWINT)|(1<<TWSTO)|(1<<TWEN);
-	
+
 	return 0;
 
 arb_lost:
@@ -160,8 +198,8 @@ err:
 
 		case TW_MT_DATA_NACK:
 		case TW_BUS_ERROR:
-		
-		default:	
+
+		default:
 			TWCR = (1<<TWINT)|(1<<TWSTO)|(1<<TWEN);
 	}
 
