@@ -175,8 +175,8 @@ int i2c_transaction(unsigned char addr, int wr_len, unsigned char *wr_data,
 
 	return 0;
 
-arb_lost:
-	return ret;
+//arb_lost:
+//	return ret;
 
 err:
 	switch(twsr)
