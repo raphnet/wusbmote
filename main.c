@@ -1,5 +1,9 @@
-/* VBoy2USB: Virtual Boy controller to USB Adapter
- * Copyright (C) 2009 Raphaël Assénat
+/* wusbmote: Wiimote accessory to USB Adapter
+ * Copyright (C) 2012-2014 Raphaël Assénat
+ *
+ * Based on:
+ *   VBoy2USB: Virtual Boy controller to USB Adapter
+ *   Copyright (C) 2009 Raphaël Assénat
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -38,7 +42,7 @@ static uchar rt_usbHidReportDescriptorSize=0;
 static uchar *rt_usbDeviceDescriptor=NULL;
 static uchar rt_usbDeviceDescriptorSize=0;
 
-PROGMEM int usbDescriptorStringSerialNumber[]  = {
+PROGMEM const int usbDescriptorStringSerialNumber[]  = {
  	USB_STRING_DESCRIPTOR_HEADER(4),
 	'1','0','0','0'
 };
@@ -90,7 +94,6 @@ uchar my_usbDescriptorConfiguration[] = {    /* USB configuration descriptor */
 
 static Gamepad *curGamepad;
 
-
 /* ----------------------- hardware I/O abstraction ------------------------ */
 
 static void hardwareInit(void)
@@ -104,18 +107,18 @@ static void hardwareInit(void)
 	// Port B does nothing in this project
 	DDRB = 0x00;
 	PORTB = 0xff;
-	
-	/* 1101 1000 bin: activate pull-ups except on USB lines 
+
+	/* 1101 1000 bin: activate pull-ups except on USB lines
 	 *
-	 * USB signals are on bit 0 and 2. 
+	 * USB signals are on bit 0 and 2.
 	 *
 	 * Bit 1 is connected with bit 0 (rev.C pcb error), so the pullup
 	 * is not enabled.
 	 * */
-	PORTD = 0xf8;   
+	PORTD = 0xf8;
 
 	/* Usb pin are init as outputs */
-	DDRD = 0x01 | 0x04;    
+	DDRD = 0x01 | 0x04;
 
 	j = 0;
 	while(--j){     /* USB Reset by device only required on Watchdog Reset */
@@ -133,8 +136,6 @@ static void hardwareInit(void)
 
 static uchar    reportBuffer[10];    /* buffer for HID reports */
 
-
-
 /* ------------------------------------------------------------------------- */
 /* ----------------------------- USB interface ----------------------------- */
 /* ------------------------------------------------------------------------- */
@@ -143,24 +144,30 @@ static uchar    idleRate;           /* in 4 ms units */
 
 uchar	usbFunctionDescriptor(struct usbRequest *rq)
 {
-	if ((rq->bmRequestType & USBRQ_TYPE_MASK) != USBRQ_TYPE_STANDARD)
-		return 0;
-
-	if (rq->bRequest == USBRQ_GET_DESCRIPTOR)
+	switch(rq->bmRequestType & USBRQ_TYPE_MASK)
 	{
-		// USB spec 9.4.3, high byte is descriptor type
-		switch (rq->wValue.bytes[1])
-		{
-			case USBDESCR_DEVICE:
-				usbMsgPtr = rt_usbDeviceDescriptor;		
-				return rt_usbDeviceDescriptorSize;
-			case USBDESCR_HID_REPORT:
-				usbMsgPtr = rt_usbHidReportDescriptor;
-				return rt_usbHidReportDescriptorSize;
-			case USBDESCR_CONFIG:
-				usbMsgPtr = my_usbDescriptorConfiguration;
-				return sizeof(my_usbDescriptorConfiguration);
-		}
+		case USBRQ_TYPE_STANDARD:
+			if (rq->bRequest == USBRQ_GET_DESCRIPTOR)
+			{
+				// USB spec 9.4.3, high byte is descriptor type
+				switch (rq->wValue.bytes[1])
+				{
+					case USBDESCR_DEVICE:
+						usbMsgPtr = rt_usbDeviceDescriptor;
+						return rt_usbDeviceDescriptorSize;
+					case USBDESCR_HID_REPORT:
+						usbMsgPtr = rt_usbHidReportDescriptor;
+						return rt_usbHidReportDescriptorSize;
+					case USBDESCR_CONFIG:
+						usbMsgPtr = my_usbDescriptorConfiguration;
+						return sizeof(my_usbDescriptorConfiguration);
+				}
+			}
+			break;
+
+		case USBRQ_TYPE_VENDOR:
+			break;
+
 	}
 
 	return 0;
@@ -192,22 +199,17 @@ uchar	usbFunctionSetup(uchar data[8])
 
 void transferGamepadReport(void)
 {
-	if (usbInterruptIsReady())
-	{ 	
-		curGamepad->buildReport(reportBuffer);
+	curGamepad->buildReport(reportBuffer);
 
-		usbSetInterrupt(reportBuffer, 8);
-		while (!usbInterruptIsReady()) {
-			usbPoll(); wdt_reset();
-		}
-		usbSetInterrupt(reportBuffer + 8, 0);
-		while (!usbInterruptIsReady()) {
-			usbPoll(); wdt_reset();
-		}
+	usbSetInterrupt(reportBuffer, 8);
+	while (!usbInterruptIsReady()) {
+		usbPoll(); wdt_reset();
+	}
+	usbSetInterrupt(reportBuffer + 8, 0);
+	while (!usbInterruptIsReady()) {
+		usbPoll(); wdt_reset();
 	}
 }
-
-
 
 int main(void)
 {
@@ -215,7 +217,6 @@ int main(void)
 	uchar   idleCounter = 0;
 
 	curGamepad = i2cGamepad_GetGamepad();
-	
 
 	// configure report descriptor according to
 	// the current gamepad
@@ -246,7 +247,6 @@ int main(void)
 	sei();
 	DBG1(0x00, 0, 0);
 
-	
 	for(;;){	/* main event loop */
 		wdt_reset();
 
@@ -287,23 +287,12 @@ int main(void)
 			}
 
 		}
-		
-			
+
 		if(must_report && usbInterruptIsReady())
 		{
 			transferGamepadReport();
 			must_report = 0;
 		}
-		/*	
-		if(must_report && usbInterruptIsReady()){
-		yy	must_report = 0;
-
-			curGamepad->buildReport(reportBuffer);
-			usbSetInterrupt(reportBuffer, curGamepad->report_size);
-		}
-*/
 	}
 	return 0;
 }
-
-/* ------------------------------------------------------------------------- */

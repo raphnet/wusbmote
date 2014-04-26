@@ -5,7 +5,7 @@
 # Tabsize: 4
 # Copyright: (c) 2006 by OBJECTIVE DEVELOPMENT Software GmbH
 # License: Proprietary, free under certain conditions. See Documentation.
-# This Revision: $Id: Makefile,v 1.1 2012-09-04 01:49:47 cvs Exp $
+# This Revision: $Id: Makefile,v 1.2 2014-04-26 15:00:16 cvs Exp $
 
 UISP = uisp -dprog=stk500 -dpart=atmega8 -dserial=/dev/ttyS1
 COMPILE = avr-gcc -Wall -Os -Iusbdrv -I. -mmcu=atmega8 -DF_CPU=12000000L #-DDEBUG_LEVEL=1
@@ -48,7 +48,7 @@ flash:	all
 	$(UISP) --erase --upload --verify if=$(HEXFILE)
 
 flash_usb:
-	sudo avrdude -p m8 -P usb -c avrispmkII -Uflash:w:$(HEXFILE) -B 1.0
+	avrdude -p m8 -P usb -c avrispmkII -Uflash:w:$(HEXFILE) -B 1.0
 
 # Fuse high byte:
 # 0xc9 = 1 1 0 0   1 0 0 1 <-- BOOTRST (boot reset vector at 0x0000)
@@ -70,7 +70,7 @@ fuse:
 	$(UISP) --wr_fuse_h=0xc9 --wr_fuse_l=0x9f
 
 fuse_usb:
-	sudo avrdude -p m8 -P usb -c avrispmkII -Uhfuse:w:0xc9:m -Ulfuse:w:0x9f:m -B 10.0
+	avrdude -p m8 -P usb -c avrispmkII -Uhfuse:w:0xc9:m -Ulfuse:w:0x9f:m -B 10.0
 
 reset:
-	sudo avrdude -p m8 -P usb -c avrispmkII -B 10.0
+	avrdude -p m8 -P usb -c avrispmkII -B 10.0

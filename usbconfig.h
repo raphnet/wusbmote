@@ -5,7 +5,7 @@
  * Tabsize: 4
  * Copyright: (c) 2005 by OBJECTIVE DEVELOPMENT Software GmbH
  * License: GNU GPL v2 (see License.txt) or proprietary (CommercialLicense.txt)
- * This Revision: $Id: usbconfig.h,v 1.2 2012-09-09 22:20:10 cvs Exp $
+ * This Revision: $Id: usbconfig.h,v 1.3 2014-04-26 15:00:16 cvs Exp $
  */
 
 #ifndef __usbconfig_h_included__
@@ -132,10 +132,10 @@ rename it to "usbconfig.h". Then edit it accordingly.
 #define  USB_CFG_VENDOR_ID       0x40, 0x17
 #define  USB_CFG_DEVICE_ID       0x79, 0x05
 
-#define USB_CFG_DEVICE_VERSION  0x00, 0x01
+#define USB_CFG_DEVICE_VERSION  0x01, 0x01
 #define USB_CFG_VENDOR_NAME     'r', 'a', 'p', 'h', 'n', 'e', 't', '.', 'n', 'e', 't'
 #define USB_CFG_VENDOR_NAME_LEN 11
-#define USB_CFG_DEVICE_NAME     'W','U','S','B','m','o','t','e','_','v','1','.','0'
+#define USB_CFG_DEVICE_NAME     'W','U','S','B','m','o','t','e','_','v','1','.','1'
 #define USB_CFG_DEVICE_NAME_LEN 13
 
 /* Same as above for the device name. If you don't want a device name, undefine

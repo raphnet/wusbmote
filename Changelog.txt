@@ -1,5 +1,10 @@
 
--- September 9, 2012: Version 1.0
+-- April 26, 2014 : Version 1.1
+  - Update V-USB and fixes for modern GCC
+  - Optimized I2C code
+
+
+-- September 9, 2012 : Version 1.0
 Initial release:
   - Supports the Wii Nunchuk at its full resolution (8 bit for the XY
     joystick and 10bit for the accelerometers)
