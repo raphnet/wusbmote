@@ -1,13 +1,11 @@
-/* Name: usbdrvasm15.S
- * Project: AVR USB driver
+/* Name: usbdrvasm15.inc
+ * Project: V-USB, virtual USB port for Atmel's(r) AVR(r) microcontrollers
  * Author: contributed by V. Bosch
  * Creation Date: 2007-08-06
  * Tabsize: 4
  * Copyright: (c) 2007 by OBJECTIVE DEVELOPMENT Software GmbH
- * License: GNU GPL v2 (see License.txt) or proprietary (CommercialLicense.txt)
- * Revision: $Id: usbdrvasm15.S,v 1.1 2012-09-04 01:49:47 cvs Exp $
+ * License: GNU GPL v2 (see License.txt), GNU GPL v3 or proprietary (CommercialLicense.txt)
  */
-
 
 /* Do not link this file! Link usbdrvasm.S instead, which includes the
  * appropriate implementation!
@@ -44,11 +42,13 @@ USB_INTR_VECTOR:
 ;
 ;   sync byte (D-) pattern LSb to MSb: 01010100 [1 = idle = J, 0 = K]
 ;   sync up with J to K edge during sync pattern -- use fastest possible loops
-;   first part has no timeout because it waits for IDLE or SE1 (== disconnected)
-;-------------------------------------------------------------------------------
-waitForJ:			 ;- 
-    sbis    USBIN, USBMINUS      ;1 <-- sample: wait for D- == 1
-    rjmp    waitForJ		 ;2 
+;The first part waits at most 1 bit long since we must be in sync pattern.
+;YL is guarenteed to be < 0x80 because I flag is clear. When we jump to
+;waitForJ, ensure that this prerequisite is met.
+waitForJ:
+    inc     YL
+    sbis    USBIN, USBMINUS
+    brne    waitForJ        ; just make sure we have ANY timeout
 ;-------------------------------------------------------------------------------
 ; The following code results in a sampling window of < 1/4 bit 
 ;	which meets the spec.
@@ -71,6 +71,9 @@ waitForK:			 ;-
     inc     YL
     sts     usbSofCount, YL
 #endif  /* USB_COUNT_SOF */
+#ifdef USB_SOF_HOOK
+    USB_SOF_HOOK
+#endif
     rjmp    sofError
 ;------------------------------------------------------------------------------
 ; {3, 5} after falling D- edge, average delay: 4 cycles [we want 5 for 
@@ -246,7 +249,7 @@ didUnstuff7:			;- [05]
     bst     x2, USBMINUS	;1 [04]
     bld     shift, 0    	;1 [05]
     subi    cnt, 1		;1 [06]
-    brcs    ignorePacket	;1 [07]
+    brcs    overflow	;1 [07]
     rjmp    rxLoop		;2 [08]
 ;-----------------------------------------------------
 unstuff4:               	;- [08] 
@@ -280,43 +283,8 @@ unstuff7:			;- [08]
     breq    se0         	;1 [02] SE0 check for stuffed bit 7
     ori     shift, 0x80 	;1 [03]
     rjmp    didUnstuff7 	;2 [04]
-;----------------------------------------------------------------------------
-; Processing of received packet (numbers in brackets are cycles after center of SE0)
-;----------------------------------------------------------------------------
-;This is the only non-error exit point for the software receiver loop
-;we don't check any CRCs here because there is no time left.
-#define token   x1
-se0:					;- [04]
-    subi    cnt, USB_BUFSIZE    	;1 [05]
-    neg     cnt                 	;1 [06]
-    cpi     cnt, 3              	;1 [07]
-    ldi     x2, 1<<USB_INTR_PENDING_BIT ;1 [08]
-    USB_STORE_PENDING(x2)           ;1 [09] clear pending intr and check flag later. SE0 should be over.
-    brlo    doReturn            	;1 [10] this is probably an ACK, NAK or similar packet
-    sub     YL, cnt             	;1 [11]
-    sbci    YH, 0               	;1 [12]
-    ld      token, y            	;2 [13+14]
-    cpi     token, USBPID_DATA0 	;1 [15]
-    breq    handleData          	;1 [16]
-    cpi     token, USBPID_DATA1 	;1 [17]
-    breq    handleData          	;1 [18]
-    ldd     x2, y+1             	;2 [19+20] ADDR and 1 bit endpoint number
-    mov     x3, x2              	;1 [21] store for endpoint number
-    andi    x2, 0x7f            	;1 [22] x2 is now ADDR
-    lds     shift, usbDeviceAddr	;2 [23+24]
-    cp      x2, shift           	;1 [25]
-    brne    ignorePacket        	;1 [26] packet for different address
-    cpi     token, USBPID_IN    	;1 [27]
-    breq    handleIn			;1 [28]
-    cpi     token, USBPID_SETUP 	;1 [29]
-    breq    handleSetupOrOut    	;1 [30]
-    cpi     token, USBPID_OUT   	;1 [31]
-    breq    handleSetupOrOut    	;1 [32]
-;   rjmp    ignorePacket        	;       fallthrough, should not happen anyway.
-ignorePacket:				;- [32]
-    clr     shift			;1 [33]
-    sts     usbCurrentTok, shift	;2 [34+35]
-doReturn:
+    
+macro POP_STANDARD ; 16 cycles
     pop     x4    
     pop     cnt
     pop     bitcnt
@@ -325,109 +293,15 @@ doReturn:
     pop     x1
     pop     shift
     pop     YH
-sofError:
+    endm
+macro POP_RETI     ; 5 cycles
     pop     YL
     out     SREG, YL
     pop     YL
-    reti
-;-------------------------------------------------------------------------
-#if USB_CFG_HAVE_INTRIN_ENDPOINT && USB_CFG_HAVE_INTRIN_ENDPOINT3
-handleIn3:				;- [42]
-    lds     cnt, usbTxLen3      	;2 [43+44]
-    sbrc    cnt, 4              	;1 [45]
-    rjmp    sendCntAndReti      	;1 [46] 46 + 16 = 62 until SOP
-    sts     usbTxLen3, x1       	;2 [47+48] x1 == USBPID_NAK from above
-    ldi     YL, lo8(usbTxBuf3)  	;1 [49]
-    ldi     YH, hi8(usbTxBuf3)  	;1 [50]
-    rjmp    usbSendAndReti      	;1 [51] 51 + 13 = 64 until SOP
-#endif
+    endm
 
-;Setup and Out are followed by a data packet two bit times (20 cycles) after
-;the end of SE0. The sync code allows up to 50 cycles delay from the start of
-;the sync pattern until the first bit is sampled. That's a total of 70 cycles.
-handleSetupOrOut:               	;[31/33]
-#if USB_CFG_IMPLEMENT_FN_WRITEOUT   /* if we have data for second OUT endpoint, set usbCurrentTok to -1 */
-    sbrc    x3, 7               	;[32] skip if endpoint 0
-    ldi     token, -1           	;[33] indicate that this is endpoint 1 OUT
-#endif
-    sts     usbCurrentTok, token	;[34+35]
-    pop     x4                  	;[36+37]
-    pop     cnt                 	;[38+39]
-    pop     bitcnt              	;[40+41]
-    pop     x3                  	;[42+43]
-    pop     x2                  	;[44+45]
-    pop     x1                  	;[46+47]
-    pop     shift               	;[48+49]
-    pop	    YH                      ;[50+51]
-    USB_LOAD_PENDING(YL)            ;[52]
-    sbrc    YL, USB_INTR_PENDING_BIT	;[53] check whether data is already arriving
-    rjmp    waitForJ            	;[54] save the pops and pushes -- a new interrupt is aready pending
-    rjmp    sofError            	;[55] not an error, but it does the pops and reti we want
-;--------------------------------------------------------------------
-handleData:				;- [16/18]
-    lds     token, usbCurrentTok	;2 [19+20]
-    tst     token               	;1 [21]
-    breq    doReturn            	;1 [22]
-    lds     x2, usbRxLen        	;2 [23+24]
-    tst     x2                  	;1 [25]
-    brne    sendNakAndReti      	;1 [26]
-; 2006-03-11: The following two lines fix a problem where the device was not
-; recognized if usbPoll() was called less frequently than once every 4 ms.
-    cpi     cnt, 4              	;1 [27] 0 sized data packets are status phase only -- ignore and ack
-    brmi    sendAckAndReti      	;1 [28] keep rx buffer clean -- we must not NAK next SETUP
-    sts     usbRxLen, cnt       	;2 [29+30] store received data, swap buffers
-    sts     usbRxToken, token   	;2 [31+23]
-    lds     x2, usbInputBufOffset	;2 [33+34] swap buffers
-    ldi     cnt, USB_BUFSIZE    	;1 [35]
-    sub     cnt, x2             	;1 [36]
-    sts     usbInputBufOffset, cnt	;2 [37+38] buffers now swapped
-    rjmp    sendAckAndReti      	;1 [39] 39 + 17 = 56 until SOP
-;--------------------------------------------------------------------
-;We don't send any data as long as the C code has not processed the current
-;input data and potentially updated the output data. That's more efficient
-;in terms of code size than clearing the tx buffers when a packet is received.
-handleIn:				;- [29]
-    lds     x1, usbRxLen        	;2 [30+31]
-    cpi     x1, 1               	;1 [32] negative values are flow control, 0 means "buffer free"
-    brge    sendNakAndReti      	;1 [33] unprocessed input packet?
-    ldi     x1, USBPID_NAK      	;1 [34] prepare value for usbTxLen
-#if USB_CFG_HAVE_INTRIN_ENDPOINT
-    sbrc    x3, 7               	;1 [35] x3 contains addr + endpoint
-    rjmp    handleIn1           	;1 [36]
-#endif
-    lds     cnt, usbTxLen       	;2 [37+38]
-    sbrc    cnt, 4              	;2 [39] all handshake tokens have bit 4 set
-    rjmp    sendCntAndReti      	;1 [40] 42 + 16 = 58 until SOP
-    sts     usbTxLen, x1        	;2 [41+42] x1 == USBPID_NAK from above
-    ldi     YL, lo8(usbTxBuf)   	;1 [43]
-    ldi     YH, hi8(usbTxBuf)   	;1 [44]
-    rjmp    usbSendAndReti      	;1 [45] 45 + 13 = 58 until SOP
-;---------------------------------------------------------------------------------------
-; Comment about when to set usbTxLen to USBPID_NAK:
-; We should set it back when we receive the ACK from the host. This would
-; be simple to implement: One static variable which stores whether the last
-; tx was for endpoint 0 or 1 and a compare in the receiver to distinguish the
-; ACK. However, we set it back immediately when we send the package,
-; assuming that no error occurs and the host sends an ACK. We save one byte
-; RAM this way and avoid potential problems with endless retries. The rest of
-; the driver assumes error-free transfers anyway.
+#include "asmcommon.inc"
 
-#if USB_CFG_HAVE_INTRIN_ENDPOINT    /* placed here due to relative jump range */
-handleIn1:                      	;- [37]
-#if USB_CFG_HAVE_INTRIN_ENDPOINT3
-; 2006-06-10 as suggested by O.Tamura: support second INTR IN / BULK IN endpoint
-    ldd     x2, y+2             	;2 [38+39]
-    sbrc    x2, 0               	;2 [40]
-    rjmp    handleIn3           	;1 [41]
-#endif
-    lds     cnt, usbTxLen1      	;2 [42+43]
-    sbrc    cnt, 4              	;2 [44] all handshake tokens have bit 4 set
-    rjmp    sendCntAndReti      	;1 [45] 45 + 16 = 61 until SOP
-    sts     usbTxLen1, x1       	;2 [46+47] x1 == USBPID_NAK from above
-    ldi     YL, lo8(usbTxBuf1)  	;1 [48]
-    ldi     YH, hi8(usbTxBuf1)  	;1 [49]
-    rjmp    usbSendAndReti      	;1 [50] 50 + 13 + 63 until SOP
-#endif
 ;---------------------------------------------------------------------------
 ; USB spec says:
 ; idle = J
@@ -518,30 +392,31 @@ didStuff7:			;- [07]
 makeSE0:
     cbr     x1, USBMASK     	;1 [06] 	prepare SE0 [spec says EOP may be 19 to 23 cycles]
     lds     x2, usbNewDeviceAddr;2 [07+08]
+    lsl     x2                  ;1 [09] we compare with left shifted address
 ;2006-03-06: moved transfer of new address to usbDeviceAddr from C-Code to asm:
 ;set address only after data packet was sent, not after handshake
-    subi    YL, 2           	;1 [09]
     out     USBOUT, x1      	;1 [00] [10] <-- out SE0-- from now 2 bits==20 cycl. until bus idle
-    sbci    YH, 0           	;1 [01]
-    breq    skipAddrAssign  	;1 [02]
-    sts     usbDeviceAddr, x2	;2 [03+04] if not skipped: SE0 is one cycle longer
+    subi    YL, 20 + 2          ;1 [01] Only assign address on data packets, not ACK/NAK in x3
+    sbci    YH, 0           	;1 [02]
+    breq    skipAddrAssign  	;1 [03]
+    sts     usbDeviceAddr, x2	;2 [04+05] if not skipped: SE0 is one cycle longer
 ;----------------------------------------------------------------------------
 ;end of usbDeviceAddress transfer
 skipAddrAssign:				;- [03/04]
-    ldi     x2, 1<<USB_INTR_PENDING_BIT	;1 [04] int0 occurred during TX -- clear pending flag
-    USB_STORE_PENDING(x2)           ;1 [05]
-    ori     x1, USBIDLE     		;1 [06]
-    in      x2, USBDDR      		;1 [07]
-    cbr     x2, USBMASK     		;1 [08] set both pins to input
-    mov     x3, x1          		;1 [09]
-    cbr     x3, USBMASK     		;1 [10] configure no pullup on both pins
-    ldi     x4, 3           		;1 [11]
-se0Delay:				;- [11] [14] 
-    dec     x4              		;1 [12] [15] 
-    brne    se0Delay        		;1 [13] [16] 
-    nop2				;2      [17+18]
-    out     USBOUT, x1      		;1      [19] <--out J (idle) -- end of SE0 (EOP sig.)
-    out     USBDDR, x2      		;1      [20] <--release bus now
-    out     USBOUT, x3      		;1      [21] <--ensure no pull-up resistors are active
-    rjmp    doReturn			;1	[22]
+    ldi     x2, 1<<USB_INTR_PENDING_BIT	;1 [05] int0 occurred during TX -- clear pending flag
+    USB_STORE_PENDING(x2)           ;1 [06]
+    ori     x1, USBIDLE     		;1 [07]
+    in      x2, USBDDR      		;1 [08]
+    cbr     x2, USBMASK     		;1 [09] set both pins to input
+    mov     x3, x1          		;1 [10]
+    cbr     x3, USBMASK     		;1 [11] configure no pullup on both pins
+    ldi     x4, 3           		;1 [12]
+se0Delay:				;- [12] [15] 
+    dec     x4              		;1 [13] [16] 
+    brne    se0Delay        		;1 [14] [17] 
+    nop2				;2      [18+19]
+    out     USBOUT, x1      		;1      [20] <--out J (idle) -- end of SE0 (EOP sig.)
+    out     USBDDR, x2      		;1      [21] <--release bus now
+    out     USBOUT, x3      		;1      [22] <--ensure no pull-up resistors are active
+    rjmp    doReturn			;1	[23]
 ;---------------------------------------------------------------------------
