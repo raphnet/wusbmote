@@ -1,5 +1,9 @@
-/* VBoy2USB: Virtual Boy to USB adapter
- * Copyright (C) 2009 Raphaël Assénat
+/* wusbmote: Wiimote accessory to USB Adapter
+ * Copyright (C) 2012-2014 Raphaël Assénat
+ *
+ * Based on:
+ *   VBoy2USB: Virtual Boy to USB adapter
+ *   Copyright (C) 2009 Raphaël Assénat
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,14 +36,14 @@
  *
  * In binary: 
  * 0xa4..  1010 0100
- * 0xa5..  1010 0101  
+ * 0xa5..  1010 0101
  *
  * It is clear that A4 and A5 is the first 8 bits of the I2C transaction. The least
  * significant bit is the I2C R/W bit.
- * 
+ *
  * This translates to a 0x52 7bit address (0xa4>>1)
  *
- * Now the Wii motion plus documentation mentions 0x(4)A6000 
+ * Now the Wii motion plus documentation mentions 0x(4)A6000
  * (http://wiibrew.org/wiki/Wiimote/Extension_Controllers/Wii_Motion_Plus)
  *
  * So we have in binary:
@@ -47,8 +51,8 @@
  *
  * The wii motion plus I2C 7 bit address is therfore 0x53.
  *
- * The document then explains the wii motion plus can be made to answer at 0xa4 
- * by wrigin 0x04 to register 0xFE. 
+ * The document then explains the wii motion plus can be made to answer at 0xa4
+ * by writing 0x04 to register 0xFE.
  */
 
 #define I2C_STANDARD_ADDRESS	0x52
@@ -69,7 +73,6 @@ static unsigned char last_reported_controller_bytes[REPORT_SIZE];
 #define W2I_REG_ID_L		0xFE
 #define W2I_REG_ID_H		0xFF
 
-
 #define STATE_INIT		0
 #define STATE_READ_DATA	1
 
@@ -85,8 +88,6 @@ static unsigned char current_flags = FLAG_NO_ANALOG_SLIDERS;
 #define ID_MPLUS	0x0405
 
 static unsigned short peripheral_id = ID_NUNCHUK;
-
-
 
 static char w2i_reg_writeByte(unsigned char i2c_addr, unsigned char reg_addr, unsigned char value)
 {
@@ -161,21 +162,21 @@ static void i2cGamepad_Update(void)
 			// Init sequence from:
 			//
 			// http://wiibrew.org/wiki/Wiimote/Extension_Controllers
-			//	
+			//
 			res = w2i_reg_writeByte(I2C_STANDARD_ADDRESS, W2I_REG_UNKNOWN_F0, 0x55);
 			if (res)
 				return;
-			
+
 			res = w2i_reg_writeByte(I2C_STANDARD_ADDRESS, W2I_REG_UNKNOWN_FB, 0x00);
-			if (res)		
+			if (res)
 				return;
-	
+
 			res = w2i_reg_readBlock(W2I_REG_ID_L, buf, 2);
 			if (res)
-				return;	
+				return;
 
 			peripheral_id = buf[1] | buf[0]<<8;
-			
+
 			state = STATE_READ_DATA;
 			device_changed = 1;
 			_delay_ms(1000);
@@ -188,7 +189,7 @@ static void i2cGamepad_Update(void)
 				state = STATE_INIT;
 				return;
 			}
-		
+
 			switch (peripheral_id)
 			{
 				default:
@@ -208,7 +209,7 @@ static void i2cGamepad_Update(void)
 					rx = ((buf[5] & 0x0C) >> 2)	| (buf[2] << 2);
 					ry = ((buf[5] & 0x30) >> 4)	| (buf[3] << 2);
 					rz = ((buf[5] & 0xC0) >> 6)	| (buf[4] << 2);
-					
+
 					if (!(buf[5]&0x01)) btns_l |= 0x01;
 					if (!(buf[5]&0x02)) btns_l |= 0x02;
 
@@ -233,13 +234,13 @@ static void i2cGamepad_Update(void)
 
 				case ID_CLASSIC:
 					// Source: http://wiibrew.org/wiki/Wiimote/Extension_Controllers/Classic_Controller
-					// 
-					//     7        6     5    4    3     2     1     0 
+					//
+					//     7        6     5    4    3     2     1     0
 					// 0   RX<4:3>        LX<5:0>
 					// 1   RX<2:1>        LY<5:0>
 					// 2   RX<0>    LT<4:3>    RY<4:0>
 					// 3   LT<2:0>             RT<4:0>
-					// 4   BDR      BDD   BLT  B-   BH    B+    BRT   1 
+					// 4   BDR      BDD   BLT  B-   BH    B+    BRT   1
 					// 5   BZL      BB    BY   BA   BX    BZR   BDL   BDU
 					//
 					x = buf[0] << 2;
@@ -248,7 +249,7 @@ static void i2cGamepad_Update(void)
 					ry = ((buf[2]&0x1f) << 5) ^ 0x3FF;
 					rz = ((buf[3]>>5) | ((buf[2] & 0x60) >> 2) ) << 5;
 					rz ^= 0xffff;
-			
+
 					// The fist 12 USB button IDs follow the assignments of my Gamecube to USB adapter project.
 					if (!(buf[4] & 0x04)) btns_l |= 0x01; // +/Start
 					if (!(buf[5] & 0x20)) btns_l |= 0x02; // Y
@@ -285,7 +286,7 @@ static void i2cGamepad_Update(void)
 						} else if (home_count==HOME_HOLD_COUNT) {
 							current_flags ^= FLAG_NO_ANALOG_SLIDERS;
 							home_count++;
-						}						
+						}
 					} else {
 						home_count=0;
 					}
@@ -295,7 +296,7 @@ static void i2cGamepad_Update(void)
 					}
 
 					break;
-				
+
 				case ID_MPLUS:
 					{
 						static short cal_rrx, cal_rry, cal_rrz;
@@ -312,7 +313,7 @@ static void i2cGamepad_Update(void)
 						rry ^= 0x8000;
 						rrz ^= 0x8000;
 
-						// zero values on origin	
+						// zero values on origin
 						if (mplus_cal < 10) {
 							mplus_cal++;
 							cal_rrx = rrx;
@@ -335,11 +336,11 @@ static void i2cGamepad_Update(void)
 						SAT_10BIT_SIGNED(rrx);
 						SAT_10BIT_SIGNED(rry);
 						SAT_10BIT_SIGNED(rrz);
-						
+
 						rx = rrx ^ 0x200;
 						ry = rry ^ 0x200;
 						rz = rrz ^ 0x200;
-					
+
 						if (!(buf[3] & 0x02)) btns_l |= 0x01;
 						if (!(buf[3] & 0x01)) btns_l |= 0x02;
 						if (!(buf[4] & 0x02)) btns_l |= 0x04;
@@ -348,31 +349,30 @@ static void i2cGamepad_Update(void)
 
 					break;
 			} // switch peripheral_id
-			
 
 			break; // STATE
 	}
 
 	setLastValues(x,y,rx,ry,rz,btns_l,btns_h);
-}	
+}
 
 static void i2cGamepad_Init(void)
 {
-	// 
+	//
 	// TWPS = 0
 	// CPU FREQ = 12000000
 	// TARGET SCL FREQ = 400000
 	//
-	//                   CPU FREQ 
+	//                   CPU FREQ
 	//             --------------------
 	// SCL freq =  16 + 2*TWBR * 4^TWPS
 	//
 	// TWBR = (((12000000 / 400000) - 16) / 1) / 2 = 7
 	//
-	//i2c_init(I2C_FLAG_EXTERNAL_PULLUP, 15); 
-	
+	//i2c_init(I2C_FLAG_EXTERNAL_PULLUP, 15);
+
 	// In fact, 100khz is stable.
-	i2c_init(I2C_FLAG_EXTERNAL_PULLUP, 52); 
+	i2c_init(I2C_FLAG_EXTERNAL_PULLUP, 52);
 
 	i2cGamepad_Update();
 
@@ -380,13 +380,12 @@ static void i2cGamepad_Init(void)
 	DEBUGLOW();
 }
 
-
 static char i2cGamepad_Changed(void)
 {
 	static int first = 1;
 	if (first) { first = 0;  return 1; }
-	
-	return memcmp(last_read_controller_bytes, 
+
+	return memcmp(last_read_controller_bytes,
 					last_reported_controller_bytes, REPORT_SIZE);
 }
 
@@ -396,9 +395,9 @@ static void i2cGamepad_BuildReport(unsigned char *reportBuffer)
 	{
 		memcpy(reportBuffer, last_read_controller_bytes, REPORT_SIZE);
 	}
-	memcpy(last_reported_controller_bytes, 
-			last_read_controller_bytes, 
-			REPORT_SIZE);	
+	memcpy(last_reported_controller_bytes,
+			last_read_controller_bytes,
+			REPORT_SIZE);
 }
 
 #include "report_desc_5axes_16btns.c"
