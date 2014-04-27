@@ -1,5 +1,7 @@
 -- Version 1.2
   - Use new VID/PID
+  - Serial number now stored in EEPROM
+  - Implement USB Vendor specific request to set serial
   - Code cleanup
 
 -- April 26, 2014 : Version 1.1
