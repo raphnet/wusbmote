@@ -1,8 +1,11 @@
 -- Version 1.2
   - Use new VID/PID
-  - Serial number now stored in EEPROM
-  - Implement USB Vendor specific request to set serial
-  - Add a Linux tool to set the serial number
+  - Configuration now stored in EEPROM. Includes:
+    - Serial number
+	- Operating mode (Mouse or Joystick)
+	- Mouse dead zone and divisor
+  - Implement USB Vendor specific request to set configuration.
+  - Add a Linux tool to set configuration through USB
   - Code cleanup
 
 -- April 26, 2014 : Version 1.1
@@ -14,7 +17,7 @@
 Initial release:
   - Supports the Wii Nunchuk at its full resolution (8 bit for the XY
     joystick and 10bit for the accelerometers)
-  
+
   - Supports the Wii classic controller (Tested RVL-005 and RVL-005(-02).
     By default, the analogic L slider is disabled. Hold HOME for 3 seconds
 	to toggle between enabled/disabled. (Required to complete button
@@ -25,4 +28,3 @@ Initial release:
 	to fit in the 10 bit USB report which severely limits precision.
 
   - The connected peripheral can be changed on the fly.
-
