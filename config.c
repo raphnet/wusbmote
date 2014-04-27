@@ -17,6 +17,9 @@ void eeprom_app_write_defaults(void)
 	const char *default_serial = "1001";
 
 	memcpy(g_eeprom_data.cfg.serial, default_serial, 4);
+	g_eeprom_data.cfg.mode = CFG_MODE_JOYSTICK;
+	g_eeprom_data.cfg.mouse_divisor = 4;
+	g_eeprom_data.cfg.mouse_deadzone = 10;
 }
 
 /* Called by the eeprom driver once the content

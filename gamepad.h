@@ -6,11 +6,11 @@ typedef struct {
 	int report_size;
 
 	int reportDescriptorSize;
-	void *reportDescriptor; // must be in flash
+	const void *reportDescriptor; // must be in flash
 
-	int deviceDescriptorSize; // if 0, use default
-	void *deviceDescriptor; // must be in flash
-	
+	int deviceDescriptorSize;
+	const void *deviceDescriptor; // must be in flash
+
 	void (*init)(void);
 	void (*update)(void);
 	char (*changed)(void);
@@ -18,5 +18,3 @@ typedef struct {
 } Gamepad;
 
 #endif // _gamepad_h__
-
-

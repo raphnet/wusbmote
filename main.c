@@ -36,12 +36,11 @@
 #include "wusbmote_requests.h"
 
 #include "i2c_gamepad.h"
+#include "i2c_mouse.h"
 
-#include "devdesc.h"
-
-static uchar *rt_usbHidReportDescriptor=NULL;
+static uchar const *rt_usbHidReportDescriptor=NULL;
 static uchar rt_usbHidReportDescriptorSize=0;
-static uchar *rt_usbDeviceDescriptor=NULL;
+static uchar const *rt_usbDeviceDescriptor=NULL;
 static uchar rt_usbDeviceDescriptorSize=0;
 
 
@@ -155,10 +154,10 @@ uchar	usbFunctionDescriptor(struct usbRequest *rq)
 				switch (rq->wValue.bytes[1])
 				{
 					case USBDESCR_DEVICE:
-						usbMsgPtr = rt_usbDeviceDescriptor;
+						usbMsgPtr = (void*)rt_usbDeviceDescriptor;
 						return rt_usbDeviceDescriptorSize;
 					case USBDESCR_HID_REPORT:
-						usbMsgPtr = rt_usbHidReportDescriptor;
+						usbMsgPtr = (void*)rt_usbHidReportDescriptor;
 						return rt_usbHidReportDescriptorSize;
 					case USBDESCR_CONFIG:
 						usbMsgPtr = my_usbDescriptorConfiguration;
@@ -221,15 +220,18 @@ uchar	usbFunctionSetup(uchar data[8])
 
 void transferGamepadReport(void)
 {
+	int i;
+	int todo = curGamepad->report_size;
+
 	curGamepad->buildReport(reportBuffer);
 
-	usbSetInterrupt(reportBuffer, 8);
-	while (!usbInterruptIsReady()) {
-		usbPoll(); wdt_reset();
-	}
-	usbSetInterrupt(reportBuffer + 8, 0);
-	while (!usbInterruptIsReady()) {
-		usbPoll(); wdt_reset();
+	for (i=0; i<=curGamepad->report_size; i+=8)
+	{
+		usbSetInterrupt(reportBuffer + i, todo > 8 ? 8 : todo);
+		while (!usbInterruptIsReady()) {
+			usbPoll(); wdt_reset();
+		}
+		todo -= 8;
 	}
 }
 
@@ -238,32 +240,37 @@ int main(void)
 	char must_report = 0, first_run = 1;
 	uchar   idleCounter = 0;
 
-	curGamepad = i2cGamepad_GetGamepad();
+	hardwareInit();
+	eeprom_init();
+
+	g_eeprom_data.cfg.mode = CFG_MODE_MOUSE;
+	switch (g_eeprom_data.cfg.mode)
+	{
+		default:
+			g_eeprom_data.cfg.mode = CFG_MODE_JOYSTICK;
+			eeprom_commit();
+			// fallthrough to Joystick mode
+		case CFG_MODE_JOYSTICK:
+			curGamepad = i2cGamepad_GetGamepad();
+			break;
+
+		case CFG_MODE_MOUSE:
+			curGamepad = i2cMouse_GetGamepad();
+			break;
+	}
 
 	// configure report descriptor according to
 	// the current gamepad
 	rt_usbHidReportDescriptor = curGamepad->reportDescriptor;
 	rt_usbHidReportDescriptorSize = curGamepad->reportDescriptorSize;
-
-	if (curGamepad->deviceDescriptor != 0)
-	{
-		rt_usbDeviceDescriptor = (void*)curGamepad->deviceDescriptor;
-		rt_usbDeviceDescriptorSize = curGamepad->deviceDescriptorSize;
-	}
-	else
-	{
-		// use descriptor from devdesc.c
-		//
-		rt_usbDeviceDescriptor = (void*)usbDescrDevice;
-		rt_usbDeviceDescriptorSize = getUsbDescrDevice_size();
-	}
+	rt_usbDeviceDescriptor = (void*)curGamepad->deviceDescriptor;
+	rt_usbDeviceDescriptorSize = curGamepad->deviceDescriptorSize;
 
 	// patch the config descriptor with the HID report descriptor size
 	my_usbDescriptorConfiguration[25] = rt_usbHidReportDescriptorSize;
+	my_usbDescriptorConfiguration[26] = rt_usbHidReportDescriptorSize >> 8;
 
 	//wdt_enable(WDTO_2S);
-	hardwareInit();
-	eeprom_init();
 	curGamepad->init();
 
 	usbReset();

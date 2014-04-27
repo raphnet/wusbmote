@@ -5,13 +5,13 @@
 # Tabsize: 4
 # Copyright: (c) 2006 by OBJECTIVE DEVELOPMENT Software GmbH
 # License: Proprietary, free under certain conditions. See Documentation.
-# This Revision: $Id: Makefile,v 1.3 2014-04-27 01:06:25 cvs Exp $
+# This Revision: $Id: Makefile,v 1.4 2014-04-27 16:15:52 cvs Exp $
 
 UISP = uisp -dprog=stk500 -dpart=atmega8 -dserial=/dev/ttyS1
 COMPILE = avr-gcc -Wall -Os -Iusbdrv -I. -mmcu=atmega8 -DF_CPU=12000000L #-DDEBUG_LEVEL=1
 HEXFILE=main.hex
 
-OBJECTS = usbdrv/usbdrv.o usbdrv/usbdrvasm.o usbdrv/oddebug.o main.o i2c_gamepad.o devdesc.o i2c.o eeprom.o config.o
+OBJECTS = usbdrv/usbdrv.o usbdrv/usbdrvasm.o usbdrv/oddebug.o main.o i2c_gamepad.o i2c_mouse.o i2c.o eeprom.o config.o
 
 # symbolic targets:
 all:	$(HEXFILE)
@@ -42,10 +42,10 @@ $(HEXFILE):	main.bin
 	avr-objcopy -j .text -j .data -O ihex main.bin $(HEXFILE)
 	./checksize main.bin
 
-flash:	all
+flash: $(HEXFILE)
 	$(UISP) --erase --upload --verify if=$(HEXFILE)
 
-flash_usb:
+flash_usb: $(HEXFILE)
 	avrdude -p m8 -P usb -c avrispmkII -Uflash:w:$(HEXFILE) -B 1.0
 
 # Fuse high byte:

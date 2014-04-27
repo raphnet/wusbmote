@@ -29,6 +29,8 @@
 #include "gamepad.h"
 #include "i2c_gamepad.h"
 #include "i2c.h"
+#include "usbdrv.h"
+#include "usbconfig.h"
 
 #define REPORT_SIZE		8
 
@@ -400,11 +402,92 @@ static void i2cGamepad_BuildReport(unsigned char *reportBuffer)
 			REPORT_SIZE);
 }
 
-#include "report_desc_5axes_16btns.c"
+#define USBDESCR_DEVICE         1
+
+static const char usbDescrDevice[] PROGMEM = {    /* USB device descriptor */
+    18,         /* sizeof(usbDescrDevice): length of descriptor in bytes */
+    USBDESCR_DEVICE,    /* descriptor type */
+    0x01, 0x01, /* USB version supported */
+    USB_CFG_DEVICE_CLASS,
+    USB_CFG_DEVICE_SUBCLASS,
+    0,          /* protocol */
+    8,          /* max packet size */
+    USB_CFG_VENDOR_ID,  /* 2 bytes */
+    USB_CFG_DEVICE_ID_JOYSTICK,  /* 2 bytes */
+    USB_CFG_DEVICE_VERSION, /* 2 bytes */
+	1,
+	2,
+	3,
+//	USB_CFG_DESCR_PROPS_STRING_VENDOR != 0 ? 1 : 0,         /* manufacturer string index */
+//	USB_CFG_DESCR_PROPS_STRING_PRODUCT != 0 ? 2 : 0,        /* product string index */
+//	USB_CFG_DESCR_PROPS_STRING_SERIAL_NUMBER != 0 ? 3 : 0,  /* serial number string index */
+    1,          /* number of configurations */
+};
+
+/*
+ * [0] X		// 8 bit
+ * [1] Y		// 8 bit
+ * [2] RX		// 10 bit
+ * [3] RX,RY	// 10 bit
+ * [4] RY,RZ	// 10 bit
+ * [5] RZ		
+ * [6] Btn 0-7
+ * [7] Btn 8-15
+ * 
+ *
+ */
+
+static const char usbHidReportDescriptor_5axes_16btns[] PROGMEM = {
+    0x05, 0x01,                    // USAGE_PAGE (Generic Desktop)
+    0x09, 0x05,                    // USAGE (Game Pad)
+    0xa1, 0x01,                    // COLLECTION (Application)
+    0x09, 0x01,                    //   USAGE (Pointer)
+    0xa1, 0x00,                    //   COLLECTION (Physical)
+    0x09, 0x30,                    //     USAGE (X)
+    0x09, 0x31,                    //     USAGE (Y)
+
+	0x15, 0x00,                    //   LOGICAL_MINIMUM (0)
+    0x26, 0xff, 0x00,              //     LOGICAL_MAXIMUM (255)
+    0x75, 0x08,                    //   REPORT_SIZE (8)
+    0x95, 0x02,                    //   REPORT_COUNT (2)
+    0x81, 0x02,                    //   INPUT (Data,Var,Abs)
+
+	0x09, 0x33,						// USAGE (Rx)
+	0x09, 0x34,						// USAGE (Ry)
+	0x09, 0x35,						// USAGE (Rz) // TODO : CHECK IF THIS REALLY IS 0x35
+
+	0x15, 0x00,                    //   LOGICAL_MINIMUM (0)
+    0x26, 0xff, 0x03,              //     LOGICAL_MAXIMUM (1024)
+    0x75, 0x0A,                    //   REPORT_SIZE (8)
+    0x95, 0x03,                    //   REPORT_COUNT (3)
+
+    0x81, 0x02,                    //   INPUT (Data,Var,Abs)
+
+	/* Padding.*/
+	0x75, 0x01,                    //     REPORT_SIZE (1)
+	0x95, 0x02,                    //     REPORT_COUNT (2)
+	0x81, 0x03,                    //     INPUT (Constant,Var,Abs)
+
+    0xc0,                          // END_COLLECTION
+
+    0x05, 0x09,                    // USAGE_PAGE (Button)
+    0x19, 0x01,                    //   USAGE_MINIMUM (Button 1)
+    0x29, 16,                    //   USAGE_MAXIMUM (Button 16)
+    0x15, 0x00,                    //   LOGICAL_MINIMUM (0)
+    0x25, 0x01,                    //   LOGICAL_MAXIMUM (1)
+    0x75, 0x01,                    // REPORT_SIZE (1)
+    0x95, 16,                    // REPORT_COUNT (16)
+    0x81, 0x02,                    // INPUT (Data,Var,Abs)
+
+    0xc0                           // END_COLLECTION
+};
+
 
 Gamepad i2cGamepad_Gamepad = {
 	report_size: 		REPORT_SIZE,
 	reportDescriptorSize:	sizeof(usbHidReportDescriptor_5axes_16btns),
+	deviceDescriptor:	usbDescrDevice,
+	deviceDescriptorSize:	sizeof(usbDescrDevice),
 	init: 			i2cGamepad_Init,
 	update: 		i2cGamepad_Update,
 	changed:		i2cGamepad_Changed,
