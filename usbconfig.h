@@ -5,7 +5,7 @@
  * Tabsize: 4
  * Copyright: (c) 2005 by OBJECTIVE DEVELOPMENT Software GmbH
  * License: GNU GPL v2 (see License.txt) or proprietary (CommercialLicense.txt)
- * This Revision: $Id: usbconfig.h,v 1.3 2014-04-26 15:00:16 cvs Exp $
+ * This Revision: $Id: usbconfig.h,v 1.4 2014-04-27 01:06:25 cvs Exp $
  */
 
 #ifndef __usbconfig_h_included__
@@ -129,13 +129,13 @@ rename it to "usbconfig.h". Then edit it accordingly.
 
 /* -------------------------- Device Description --------------------------- */
 
-#define  USB_CFG_VENDOR_ID       0x40, 0x17
-#define  USB_CFG_DEVICE_ID       0x79, 0x05
+#define  USB_CFG_VENDOR_ID       0x9B, 0x28
+#define  USB_CFG_DEVICE_ID       0x10, 0x00
 
-#define USB_CFG_DEVICE_VERSION  0x01, 0x01
+#define USB_CFG_DEVICE_VERSION  0x02, 0x01
 #define USB_CFG_VENDOR_NAME     'r', 'a', 'p', 'h', 'n', 'e', 't', '.', 'n', 'e', 't'
 #define USB_CFG_VENDOR_NAME_LEN 11
-#define USB_CFG_DEVICE_NAME     'W','U','S','B','m','o','t','e','_','v','1','.','1'
+#define USB_CFG_DEVICE_NAME     'W','U','S','B','m','o','t','e','_','v','1','.','2'
 #define USB_CFG_DEVICE_NAME_LEN 13
 
 /* Same as above for the device name. If you don't want a device name, undefine
@@ -227,7 +227,7 @@ rename it to "usbconfig.h". Then edit it accordingly.
 #define USB_CFG_DESCR_PROPS_STRING_0                0
 #define USB_CFG_DESCR_PROPS_STRING_VENDOR           0
 #define USB_CFG_DESCR_PROPS_STRING_PRODUCT          0
-#define USB_CFG_DESCR_PROPS_STRING_SERIAL_NUMBER    USB_PROP_LENGTH((6*2))
+#define USB_CFG_DESCR_PROPS_STRING_SERIAL_NUMBER    USB_PROP_IS_RAM | USB_PROP_LENGTH((6*2))
 #define USB_CFG_DESCR_PROPS_HID                     0
 #define USB_CFG_DESCR_PROPS_HID_REPORT              USB_PROP_IS_DYNAMIC
 #define USB_CFG_DESCR_PROPS_UNKNOWN                 0

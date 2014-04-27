@@ -1,3 +1,6 @@
+-- Version 1.2
+  - Use new VID/PID
+  - Code cleanup
 
 -- April 26, 2014 : Version 1.1
   - Update V-USB and fixes for modern GCC
