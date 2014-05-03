@@ -1,5 +1,4 @@
 -- Version 1.2
-  - Use new VID/PID
   - Add mouse support (Using Nunchuk or Classic controller)
   - Configuration now stored in EEPROM. Includes:
     - Serial number
@@ -9,6 +8,8 @@
 	- Classic controller mouse scroll using right stick
   - Implement USB Vendor specific request to set configuration.
   - Add a Linux tool to set configuration through USB
+  - Use new VID/PID
+  - Atmega168 now compatible (Use Makefile.atmega168)
   - Code cleanup
 
 -- April 26, 2014 : Version 1.1

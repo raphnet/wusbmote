@@ -5,11 +5,11 @@
 # Tabsize: 4
 # Copyright: (c) 2006 by OBJECTIVE DEVELOPMENT Software GmbH
 # License: Proprietary, free under certain conditions. See Documentation.
-# This Revision: $Id: Makefile,v 1.4 2014-04-27 16:15:52 cvs Exp $
+# This Revision: $Id: Makefile,v 1.5 2014-05-03 21:12:24 cvs Exp $
 
 UISP = uisp -dprog=stk500 -dpart=atmega8 -dserial=/dev/ttyS1
 COMPILE = avr-gcc -Wall -Os -Iusbdrv -I. -mmcu=atmega8 -DF_CPU=12000000L #-DDEBUG_LEVEL=1
-HEXFILE=main.hex
+HEXFILE=wusbmote-m8.hex
 
 OBJECTS = usbdrv/usbdrv.o usbdrv/usbdrvasm.o usbdrv/oddebug.o main.o i2c_gamepad.o i2c_mouse.o i2c.o eeprom.o config.o
 
@@ -31,16 +31,15 @@ all:	$(HEXFILE)
 
 
 clean:
-	rm -f $(HEXFILE) main.lst main.obj main.cof main.list main.map main.eep.hex main.bin *.o usbdrv/*.o main.s usbdrv/oddebug.s usbdrv/usbdrv.s
+	rm -f *.hex *.map main.elf *.o usbdrv/*.o main.s usbdrv/oddebug.s usbdrv/usbdrv.s
 
 # file targets:
-main.bin:	$(OBJECTS)
-	$(COMPILE) -o main.bin $(OBJECTS) -Wl,-Map=main.map
+main.elf:	$(OBJECTS)
+	$(COMPILE) -o main.elf $(OBJECTS) -Wl,-Map=main.map
 
-$(HEXFILE):	main.bin
-	rm -f $(HEXFILE) main.eep.hex
-	avr-objcopy -j .text -j .data -O ihex main.bin $(HEXFILE)
-	./checksize main.bin
+$(HEXFILE):	main.elf
+	avr-objcopy -j .text -j .data -O ihex main.elf $(HEXFILE)
+	./checksize main.elf
 
 flash: $(HEXFILE)
 	$(UISP) --erase --upload --verify if=$(HEXFILE)
