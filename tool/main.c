@@ -80,6 +80,7 @@ struct option longopts[] = {
 	{ "scroll_nunchuck_step", 1, NULL, OPT_SCRL_NUNCHUCK_STEP },
 	{ "scroll_nunchuck_c", 1, NULL, OPT_SCRL_NUNCHUCK_C },
 	{ "scroll_nunckuck_c_threshold", 1, NULL, OPT_SCRL_NUNCHUCK_C_THRES },
+	{ },
 };
 
 static int listDevices(void)
