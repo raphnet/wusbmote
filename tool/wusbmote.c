@@ -38,6 +38,18 @@ int wusbmote_init(int verbose)
 void wusbmote_shutdown(void)
 {
 }
+
+static char isProductIdHandled(unsigned short pid)
+{
+	switch (pid)
+	{
+		case 0x0010: // WUSBMote v1.2 (Joystick mode)
+		case 0x0011: // WUSBMote v1.2 (Mouse mode)
+			return 1;
+	}
+	return 0;
+}
+
 /*
 static void wusbmote_initListCtx(struct wusbmote_list_ctx *ctx)
 {
@@ -58,7 +70,7 @@ void wusbmote_freeListCtx(struct wusbmote_list_ctx *ctx)
 
 /**
  * \brief List instances of our rgbleds device on the USB busses.
- * \param dst Destination buffer for device serial number/id. 
+ * \param dst Destination buffer for device serial number/id.
  * \param dstbuf_size Destination buffer size.
  */
 wusbmote_device_t wusbmote_listDevices(struct wusbmote_info *info, struct wusbmote_list_ctx *ctx)
@@ -95,7 +107,7 @@ wusbmote_device_t wusbmote_listDevices(struct wusbmote_info *info, struct wusbmo
 				printf("Considering USB 0x%04x:0x%04x\n", ctx->dev->descriptor.idVendor, ctx->dev->descriptor.idProduct);
 			}
 			if (ctx->dev->descriptor.idVendor == OUR_VENDOR_ID) {
-				if (ctx->dev->descriptor.idProduct == OUR_PRODUCT_ID) {
+				if (isProductIdHandled(ctx->dev->descriptor.idProduct)) {
 					usb_dev_handle *hdl;
 
 					if (IS_VERBOSE()) {
@@ -147,6 +159,7 @@ retry:
 	res = usb_claim_interface(hdl, 0);
 	if (res<0) {
 		if (!detach_attempted) {
+			detach_attempted = 1;
 			printf("Attempting to detach kernel driver...\n");
 			usb_detach_kernel_driver_np(hdl, 0);
 			goto retry;
@@ -154,6 +167,10 @@ retry:
 
 		usb_close(hdl);
 		return NULL;
+	}
+
+	if (detach_attempted) {
+		printf("****\nWarning: The kernel driver that was currently handling the device had to be detached so that the configuration commands could be sent. The device will not be re-attached. You will have to reconnect it manually.\n****\n");
 	}
 
 	return hdl;
@@ -178,28 +195,16 @@ int wusbmote_cmd(wusbmote_hdl_t hdl, const unsigned char cmd[5], unsigned char d
 		cmd[4]<<8 | cmd[3], 	/* wIndex */
 		(char*)buffer, sizeof(buffer), 5000);
 
-//	if (trace) {
-//		printf("req: 0x%02x, val: 0x%02x, idx: 0x%02x <> %d: ",
-//			cmd, id, 0, n);
-//		if (n>0) {
-//			for (i=0; i<n; i++) {
-//				printf("%02x ", buffer[i]);
-//			}
-//		}
-//		printf("\n");
-//	}
-
 	/* Validate size first */
 	if (n>8) {
 		fprintf(stderr, "Too much data received! (%d)\n", n);
 		return -3;
-	} else if (n<2) {
+	} else if (n<1) {
 		fprintf(stderr, "Not enough data received! (%d)\n", n);
 		return -4;
 	}
 
-	/* dont count command and xor */
-	datlen = n - 2;
+	datlen = n;
 
 	/* Check if reply is for this command */
 	if (buffer[0] != cmd[0]) {
@@ -208,7 +213,7 @@ int wusbmote_cmd(wusbmote_hdl_t hdl, const unsigned char cmd[5], unsigned char d
 	}
 
 	if (datlen && dst) {
-		memcpy(dst, buffer+1, datlen);
+		memcpy(dst, buffer, datlen);
 	}
 
 	return datlen;

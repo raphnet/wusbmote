@@ -25,6 +25,7 @@
 
 #include "version.h"
 #include "wusbmote.h"
+#include "../wusbmote_requests.h"
 
 static void printUsage(void)
 {
@@ -32,12 +33,54 @@ static void printUsage(void)
 	printf("Control tool for WUSBmote adapter. Version %s\n", VERSION_STR);
 	printf("\n");
 	printf("Options:\n");
-	printf("  -h           Print help\n");
-	printf("  -l           List devices\n");
+	printf("  -h, --help   Print help\n");
+	printf("  -l, --list   List devices\n");
 	printf("  -s serial    Operate on specified device (required unless -f is specified)\n");
-	printf("  -f           If no serial is specified, use first device detected.\n");
+	printf("  -f, --force  If no serial is specified, use first device detected.\n");
+	printf("\n");
+	printf("Configuratin commands:\n");
+	printf("  --set_serial serial                Assign a new device serial number\n");
+	printf("  --mouse_mode                       Put the device in mouse mode\n");
+	printf("  --joystick_mode                    Put the device in joystick mode\n");
+	printf("  --mouse_divisor val                Set the mouse rate divisor (Higher = slower). Typ: 4\n");
+	printf("  --mouse_deadzone val               Set the deadzone for mouse mode. Typ: 5\n");
+	printf("  --scroll_joystick_invert val       Invert joystick scrolling direction. (0 = normal, 1 = inverted)\n");
+	printf("  --scroll_nunchuck_invert val       Invert scroll direction (0 = normal, 1 = inverted)\n");
+	printf("  --scroll_nunchuck_threshold val    Set the nunchuck roll threshold for scrolling. Typ: 127\n");
+	printf("  --scroll_nunchuck_step val         Set the scroll step size (Higher = more scrolling). Typ: 5\n");
+	printf("  --scroll_nunchuck_c val            Enable/disable scrolling by move + C. (1 = enable, 0 = disable)\n");
+	printf("  --scroll_nunckuck_c_threshold val  Stick deflection threshold for scrolling. (Typ: 12)\n");
 	printf("\n");
 }
+
+#define OPT_SET_SERIAL				257
+#define OPT_MOUSE_MODE 				258
+#define OPT_JOYSTICK_MODE			259
+#define OPT_MOUSE_DIV				260
+#define OPT_MOUSE_DZ				261
+#define OPT_SCRL_JOY_INVERT			262
+#define OPT_SCRL_NUNCHUCK_THRES		263
+#define OPT_SCRL_NUNCHUCK_STEP		264
+#define OPT_SCRL_NUNCHUCK_INVERT	265
+#define OPT_SCRL_NUNCHUCK_C			266
+#define OPT_SCRL_NUNCHUCK_C_THRES	267
+
+struct option longopts[] = {
+	{ "help", 0, NULL, 'h' },
+	{ "list", 0, NULL, 'l' },
+	{ "force", 0, NULL, 'f' },
+	{ "set_serial", 1, NULL, OPT_SET_SERIAL },
+	{ "mouse_mode", 0, NULL, OPT_MOUSE_MODE },
+	{ "joystick_mode", 0, NULL, OPT_JOYSTICK_MODE },
+	{ "mouse_divisor", 1, NULL, OPT_MOUSE_DIV },
+	{ "mouse_deadzone", 1, NULL, OPT_MOUSE_DZ },
+	{ "scroll_joystick_invert", 1, NULL, OPT_SCRL_JOY_INVERT },
+	{ "scroll_nunchuck_invert", 1, NULL, OPT_SCRL_NUNCHUCK_INVERT },
+	{ "scroll_nunchuck_threshold", 1, NULL, OPT_SCRL_NUNCHUCK_THRES },
+	{ "scroll_nunchuck_step", 1, NULL, OPT_SCRL_NUNCHUCK_STEP },
+	{ "scroll_nunchuck_c", 1, NULL, OPT_SCRL_NUNCHUCK_C },
+	{ "scroll_nunckuck_c_threshold", 1, NULL, OPT_SCRL_NUNCHUCK_C_THRES },
+};
 
 static int listDevices(void)
 {
@@ -78,8 +121,9 @@ int main(int argc, char **argv)
 	int verbose = 0, use_first = 0;
 	int cmd_list = 0;
 	char *target_serial = NULL;
+	const char *short_optstr = "hls:vf";
 
-	while((opt = getopt(argc, argv, "hls:vf")) != -1) {
+	while((opt = getopt_long(argc, argv, short_optstr, longopts, NULL)) != -1) {
 		switch(opt)
 		{
 			case 's':
@@ -97,7 +141,7 @@ int main(int argc, char **argv)
 			case 'l':
 				cmd_list = 1;
 				break;
-			default:
+			case '?':
 				fprintf(stderr, "Unrecognized argument. Try -h\n");
 				return -1;
 		}
@@ -148,15 +192,87 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	if (1)
+	printf("Ready.\n");
+
+	optind = 1;
+	while((opt = getopt_long(argc, argv, short_optstr, longopts, NULL)) != -1)
 	{
-#define CMD_SET_SERIAL	1
-		unsigned char cmd[5] = { CMD_SET_SERIAL, '9', '8', '7', '6' };
+		unsigned char cmd[5] = {0,0,0,0,0};
 		unsigned char result[8];
 		int n;
 
-		n = wusbmote_cmd(hdl, cmd, result);
-		printf("res: %d\n", n);
+		switch (opt)
+		{
+			case OPT_SET_SERIAL:
+				printf("Setting serial...");
+				if (strlen(optarg) != 4) {
+					fprintf(stderr, "Serial number must be 4 characters\n");
+					return -1;
+				}
+				cmd[0] = RQ_WUSBMOTE_SETSERIAL;
+				memcpy(cmd + 1, optarg, 4);
+				break;
+
+			case OPT_MOUSE_MODE:
+			case OPT_JOYSTICK_MODE:
+				printf("Setting mouse/joystick mode...");
+				cmd[0] = RQ_WUSBMOTE_SET_MODE;
+				cmd[1] = opt == OPT_MOUSE_MODE ? CFG_MODE_MOUSE : CFG_MODE_JOYSTICK;
+				break;
+
+			case OPT_MOUSE_DIV:
+				printf("Setting mouse divisor...");
+				cmd[0] = RQ_WUSBMOTE_SET_DIVISOR;
+				cmd[1] = strtol(optarg, NULL, 0);
+				break;
+
+			case OPT_MOUSE_DZ:
+				printf("Setting dead zone...");
+				cmd[0] = RQ_WUSBMOTE_SET_DEADZONE;
+				cmd[1] = strtol(optarg, NULL, 0);
+				break;
+
+			case OPT_SCRL_JOY_INVERT:
+				printf("Setting joystick invert scroll...");
+				cmd[0] = RQ_WUSBMOTE_SET_SCROLL_JOYSTICK_INVERT;
+				cmd[1] = strtol(optarg, NULL, 0);
+				break;
+
+			case OPT_SCRL_NUNCHUCK_INVERT:
+				printf("Setting nunchuck inverted scroll-by-rolling...");
+				cmd[0] = RQ_WUSBMOTE_SET_SCROLL_NUNCHUCK_INVERT;
+				cmd[1] = strtol(optarg, NULL, 0);
+				break;
+
+			case OPT_SCRL_NUNCHUCK_THRES:
+				printf("Setting nunchuck scroll-by-rolling threshold...");
+				cmd[0] = RQ_WUSBMOTE_SET_SCROLL_NUNCHUCK_THRESHOLD;
+				cmd[1] = strtol(optarg, NULL, 0);
+				break;
+
+			case OPT_SCRL_NUNCHUCK_STEP:
+				printf("Setting nunchuck scroll-by-rolling step...");
+				cmd[0] = RQ_WUSBMOTE_SET_SCROLL_NUNCHUCK_STEP;
+				cmd[1] = strtol(optarg, NULL, 0);
+				break;
+
+			case OPT_SCRL_NUNCHUCK_C:
+				printf("Enabling/Disabling nunchuck scroll by C-button...");
+				cmd[0] = RQ_WUSBMOTE_SET_SCROLL_NUNCHUCK_C;
+				cmd[1] = strtol(optarg, NULL, 0);
+				break;
+
+			case OPT_SCRL_NUNCHUCK_C_THRES:
+				printf("Setting nunchuck scroll by C-button threshold...");
+				cmd[0] = RQ_WUSBMOTE_SET_SCROLL_NUNCHUCK_C_THRESHOLD;
+				cmd[1] = strtol(optarg, NULL, 0);
+				break;
+		}
+
+		if (cmd[0]) {
+			n = wusbmote_cmd(hdl, cmd, result);
+			printf("command result: %d\n", n);
+		}
 	}
 
 	wusbmote_closeDevice(hdl);

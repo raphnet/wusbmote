@@ -9,11 +9,21 @@ struct eeprom_cfg {
 	uint8_t mode;
 	uint8_t mouse_divisor;
 	uint8_t mouse_deadzone;
+	uint8_t scroll_joystick_invert;
+	uint8_t scroll_nunchuck_invert;
+
+	/* Scrolling by tilting the nunchuck */
+	uint8_t scroll_nunchuck_threshold;
+	uint8_t scroll_nunchuck_step;
+
+	/* Scrolling by pressing C while moving */
+	uint8_t scroll_nunchuck_c; // on/off
+	uint8_t scroll_nunchuck_c_threshold;
 };
 
 void eeprom_app_write_defaults(void);
 void eeprom_app_ready(void);
 
-void config_set_serial(char serial[4]);
+unsigned char config_handleCommand(unsigned char cmd, const unsigned char rqdata[4], unsigned char dst[8]);
 
 #endif

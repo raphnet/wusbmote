@@ -2,7 +2,6 @@
 #define _wusbmote_h__
 
 #define OUR_VENDOR_ID 	0x289b
-#define OUR_PRODUCT_ID 	0x0010
 
 struct wusbmote_info {
 	char str_prodname[256];

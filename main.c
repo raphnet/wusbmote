@@ -43,7 +43,6 @@ static uchar rt_usbHidReportDescriptorSize=0;
 static uchar const *rt_usbDeviceDescriptor=NULL;
 static uchar rt_usbDeviceDescriptorSize=0;
 
-
 char usbDescriptorConfiguration[] = { 0 }; // dummy
 
 uchar my_usbDescriptorConfiguration[] = {    /* USB configuration descriptor */
@@ -202,16 +201,9 @@ uchar	usbFunctionSetup(uchar data[8])
 			rqdata[1] = rq->wValue.bytes[1];
 			rqdata[2] = rq->wIndex.bytes[0];
 			rqdata[3] = rq->wIndex.bytes[1];
-			replybuf[0] = rq->bRequest;
 			usbMsgPtr = replybuf;
 
-			switch (rq->bRequest)
-			{
-				case RQ_WUSBMOTE_SETSERIAL:
-					config_set_serial((char*)rqdata);
-					return 1;
-			}
-			break;
+			return config_handleCommand(rq->bRequest, rqdata, replybuf);
 	}
 	return 0;
 }
@@ -243,7 +235,6 @@ int main(void)
 	hardwareInit();
 	eeprom_init();
 
-	g_eeprom_data.cfg.mode = CFG_MODE_MOUSE;
 	switch (g_eeprom_data.cfg.mode)
 	{
 		default:

@@ -168,10 +168,15 @@ static char w2i_reg_readBlock(unsigned char reg_addr, unsigned char *dst, int le
 	return 0;
 }
 
+#define MOUSE_DEADZONE	g_eeprom_data.cfg.mouse_deadzone
+#define SCR_NCK_THRES	g_eeprom_data.cfg.scroll_nunchuck_threshold
+#define SCR_NCK_C_THRES	g_eeprom_data.cfg.scroll_nunchuck_c_threshold
+#define SCR_RJOY_THRES	8
+
 static void setLastValues(unsigned char x, unsigned char y, unsigned short rx, unsigned short ry, unsigned short rz, unsigned char btns, unsigned char orig_x, unsigned char orig_y)
 {
 	int X,Y,XO,YO;;
-	int W;
+	int W = 0;
 	static int w_active;
 	static unsigned char wvalue = 0;
 
@@ -183,42 +188,115 @@ static void setLastValues(unsigned char x, unsigned char y, unsigned short rx, u
 	X -= XO;
 	Y -= YO;
 
-	W = ry - 0x10;
-w_active = 0;
-#define WTHR 8
-	if (W > WTHR) {
-		if (!w_active) {
-			W = 1;
-			w_active = 1;
-		} else {
-			W = 0;
+	if (peripheral_id == ID_NUNCHUK)
+	{
+		if (g_eeprom_data.cfg.scroll_nunchuck_c)
+		{ // scroll by pressing C while moving
+			static char last_c = 0, scrolling = 0;
+			char c = btns & 0x02;
+
+			// button down event
+			if (c && !last_c) {
+				if ((Y > MOUSE_DEADZONE) || (Y < -MOUSE_DEADZONE))
+					scrolling = 1;
+			}
+			// button release event
+			if (!c && last_c) {
+				scrolling = 0;
+			}
+			last_c = c;
+
+			if (scrolling) {
+				W = Y;
+				Y = 0;
+				X = 0;
+				if (!g_eeprom_data.cfg.scroll_nunchuck_invert) {
+					W = -W;
+				}
+				btns &= ~0x02;
+				if (W > SCR_NCK_C_THRES) {
+					W = 1;
+				} else if (W < -SCR_NCK_C_THRES) {
+					W = -1;
+				} else {
+					W = 0;
+				}
+				wvalue = W;
+			}
+
 		}
-	} else if (W < -WTHR) {
-		if (!w_active) {
-			W = -1;
-			w_active = 1;
-		} else {
-			W = 0;
+		else
+		{ // scroll by rolling
+			W = rx - 0x200;
+			if (g_eeprom_data.cfg.scroll_nunchuck_invert) {
+				W = -W;
+			}
+
+			if (W > SCR_NCK_THRES) {
+				if (!w_active) {
+					W = g_eeprom_data.cfg.scroll_nunchuck_step;
+					w_active = 1;
+				} else {
+					W = 0;
+				}
+			} else if (W < -SCR_NCK_THRES) {
+				if (!w_active) {
+					W = -g_eeprom_data.cfg.scroll_nunchuck_step;
+					w_active = 1;
+				} else {
+					W = 0;
+				}
+			} else {
+				W = 0;
+				w_active = 0;
+			}
+
+			wvalue = W;
 		}
-	} else {
-		W = 0;
-		w_active = 0;
 	}
 
-	wvalue = W;
+	if (peripheral_id == ID_CLASSIC)
+	{
+		W = ry - 0x10;
 
-#define THR	g_eeprom_data.cfg.mouse_deadzone
-	if (X > THR) {
-		X -= THR;
-	} else if (X < -THR) {
-		X += THR;
+		if (g_eeprom_data.cfg.scroll_joystick_invert) {
+			W = -W;
+		}
+
+		w_active = 0;
+		if (W > SCR_RJOY_THRES) {
+			if (!w_active) {
+				W = 1;
+				w_active = 1;
+			} else {
+				W = 0;
+			}
+		} else if (W < -SCR_RJOY_THRES) {
+			if (!w_active) {
+				W = -1;
+				w_active = 1;
+			} else {
+				W = 0;
+			}
+		} else {
+			W = 0;
+			w_active = 0;
+		}
+
+		wvalue = W;
+	}
+
+	if (X > MOUSE_DEADZONE) {
+		X -= MOUSE_DEADZONE;
+	} else if (X < -MOUSE_DEADZONE) {
+		X += MOUSE_DEADZONE;
 	} else {
 		X = 0;
 	}
-	if (Y > THR) {
-		Y -= THR;
-	} else if (Y < -THR) {
-		Y += THR;
+	if (Y > MOUSE_DEADZONE) {
+		Y -= MOUSE_DEADZONE;
+	} else if (Y < -MOUSE_DEADZONE) {
+		Y += MOUSE_DEADZONE;
 	} else {
 		Y = 0;
 	}
@@ -321,7 +399,7 @@ static void i2cMouse_Update(void)
 					x = buf[0];
 					y = buf[1] ^ 0xff;
 					rx = ((buf[5] & 0x0C) >> 2)	| (buf[2] << 2);
-					ry = 0; // ((buf[5] & 0x30) >> 4)	| (buf[3] << 2);
+					ry = 0x10; // ((buf[5] & 0x30) >> 4)	| (buf[3] << 2);
 					rz = ((buf[5] & 0xC0) >> 6)	| (buf[4] << 2);
 
 					if (!(buf[5]&0x01)) btns |= 0x01;
