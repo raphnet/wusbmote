@@ -104,6 +104,17 @@ static const char mouse_report_descriptor[] PROGMEM = {
 
     0xc0,                          //   END_COLLECTION
     0xc0,                          // END_COLLECTION
+
+	//// Vendor defined feature report
+	0xA1, 0x02,				// COLLECTION (Logical)
+		0x06, 0x00, 0xFF,	// USAGE_PAGE(Vendor defined page 1)
+		0x09, 0x01,			// USAGE (Vendor defined usage)
+		0x15, 0x00,			//   LOGICAL_MINIMUM (0)
+	    0x26, 0xff, 0x00,	//     LOGICAL_MAXIMUM (255)
+		0x75, 0x08,			// REPORT_SIZE (8)
+		0x95, 0x05,			// REPORT_COUNT (5)
+		0xB1, 0x00,			// FEATURE (Data,Ary,Abs)
+	0xC0					// END COLLECTION
 };
 
 

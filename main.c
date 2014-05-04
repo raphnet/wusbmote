@@ -205,10 +205,17 @@ uchar	usbFunctionSetup(uchar data[8])
 	switch (rq->bmRequestType & USBRQ_TYPE_MASK)
 	{
 		case USBRQ_TYPE_CLASS:
-			if(rq->bRequest == USBRQ_HID_GET_REPORT){  /* wValue: ReportType (highbyte), ReportID (lowbyte) */
-				/* we only have one report type, so don't look at wValue */
-				curGamepad->buildReport(reportBuffer);
-				return curGamepad->report_size;
+			switch (rq->bRequest)
+			{
+				case USBRQ_HID_GET_REPORT:
+					/* wValue: ReportType (highbyte), ReportID (lowbyte) */
+					/* we only have one report type, so don't look at wValue */
+					curGamepad->buildReport(reportBuffer);
+					return curGamepad->report_size;
+
+				case USBRQ_HID_SET_REPORT:
+					/* wValue: Report Type (high), ReportID (low) */
+					return USB_NO_MSG; // usbFunctionWrite will be called
 			}
 			break;
 
@@ -222,6 +229,21 @@ uchar	usbFunctionSetup(uchar data[8])
 			return config_handleCommand(rq->bRequest, rqdata, replybuf);
 	}
 	return 0;
+}
+
+uchar usbFunctionWrite(uchar *data, uchar len)
+{
+	unsigned char dst[8];
+
+	if (len != 5) {
+		return 0xff;
+	}
+
+	if (!config_handleCommand(data[0], data+1, dst)) {
+		return 0xff;
+	}
+
+	return 1;
 }
 
 /* ------------------------------------------------------------------------- */

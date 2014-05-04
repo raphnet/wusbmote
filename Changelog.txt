@@ -1,11 +1,11 @@
--- Version 1.2
+-- Version 1.2 : Version 1.2
   - Add mouse support (Using Nunchuk or Classic controller)
+	- Classic controller mouse scroll using right stick
+	- Nunchuck mouse scroll wheel by moving then holding C
   - Configuration now stored in EEPROM. Includes:
     - Serial number
 	- Operating mode (Mouse or Joystick)
 	- Mouse parameters: Divisor, deadzone, invert wheel
-	- Nunchuck mouse scroll wheel by moving then holding C
-	- Classic controller mouse scroll using right stick
   - Implement USB Vendor specific request to set configuration.
   - Add a Linux tool to set configuration through USB
   - Use new VID/PID

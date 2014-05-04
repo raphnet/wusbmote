@@ -5,7 +5,7 @@
  * Tabsize: 4
  * Copyright: (c) 2005 by OBJECTIVE DEVELOPMENT Software GmbH
  * License: GNU GPL v2 (see License.txt) or proprietary (CommercialLicense.txt)
- * This Revision: $Id: usbconfig.h,v 1.5 2014-04-27 16:15:52 cvs Exp $
+ * This Revision: $Id: usbconfig.h,v 1.6 2014-05-04 18:41:31 cvs Exp $
  */
 
 #ifndef __usbconfig_h_included__
@@ -94,7 +94,7 @@ rename it to "usbconfig.h". Then edit it accordingly.
  * The value is in milliamperes. [It will be divided by two since USB
  * communicates power requirements in units of 2 mA.]
  */
-#define USB_CFG_IMPLEMENT_FN_WRITE      0
+#define USB_CFG_IMPLEMENT_FN_WRITE      1
 /* Set this to 1 if you want usbFunctionWrite() to be called for control-out
  * transfers. Set it to 0 if you don't need it and want to save a couple of
  * bytes.
