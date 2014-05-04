@@ -55,9 +55,9 @@ EFUSE=0x01
 # Fuse high byte (Datasheet Table 28-6)
 #
 # RSTDISBL  DWEN  SPIEN   WDTON  EESAVE  BODLEVEL2  BODLEVEL1  BODLEVEL0
-#    1        1      0      1      0         1          0          1
+#    1        1      0      1      1         1          0          1
 #
-HFUSE=0xd5
+HFUSE=0xdd
 
 # Fuse low byte (Datasheet Table 28-7)
 #
