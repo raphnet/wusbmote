@@ -6,9 +6,9 @@
     - Serial number
 	- Operating mode (Mouse or Joystick)
 	- Mouse parameters: Divisor, deadzone, invert wheel
-  - Implement USB Vendor specific request to set configuration.
-  - Add a Linux tool to set configuration through USB
-  - Use new VID/PID
+  - Implement an HID Feature report to set configuration.
+  - Add a Linux tool to set configuration through USB (Uses hidapi)
+  - Change VID/PID
   - Atmega168 now compatible (Use Makefile.atmega168)
   - Code cleanup
 
