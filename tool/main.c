@@ -22,6 +22,7 @@
 #include <getopt.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <wchar.h>
 
 #include "version.h"
 #include "wusbmote.h"
@@ -86,28 +87,21 @@ struct option longopts[] = {
 static int listDevices(void)
 {
 	int n_found = 0;
-	wusbmote_device_t cur_dev = NULL;
 	struct wusbmote_list_ctx *listctx;
 	struct wusbmote_info inf;
-	int had_access_error = 0;
 
 	listctx = wusbmote_allocListCtx();
-	while ((cur_dev=wusbmote_listDevices(&inf, listctx)))
+	if (!listctx) {
+		fprintf(stderr, "List context could not be allocated\n");
+		return -1;
+	}
+	while (wusbmote_listDevices(&inf, listctx))
 	{
 		n_found++;
-		printf("Found device '%s', serial '%s', firmware %d.%d", inf.str_prodname, inf.str_serial, inf.major, inf.minor);
-		if (!inf.access) {
-			printf(" (Warning: No access)");
-			had_access_error = 1;
-		}
-		printf("\n");
+		printf("Found device '%ls', serial '%ls'\n", inf.str_prodname, inf.str_serial);
 	}
 	wusbmote_freeListCtx(listctx);
 	printf("%d device(s) found\n", n_found);
-
-	if (had_access_error) {
-		printf("\n** Warning! At least one device was not accessible. Please try as root or configure udev to give appropriate permissions.\n");
-	}
 
 	return n_found;
 }
@@ -115,20 +109,29 @@ static int listDevices(void)
 int main(int argc, char **argv)
 {
 	wusbmote_hdl_t hdl;
-	wusbmote_device_t cur_dev = NULL, dev = NULL;
 	struct wusbmote_list_ctx *listctx;
 	int opt, retval = 0;
 	struct wusbmote_info inf;
-	int verbose = 0, use_first = 0;
+	struct wusbmote_info *selected_device = NULL;
+	int verbose = 0, use_first = 0, serial_specified = 0;
 	int cmd_list = 0;
-	char *target_serial = NULL;
+#define TARGET_SERIAL_CHARS 128
+	wchar_t target_serial[TARGET_SERIAL_CHARS];
 	const char *short_optstr = "hls:vf";
 
 	while((opt = getopt_long(argc, argv, short_optstr, longopts, NULL)) != -1) {
 		switch(opt)
 		{
 			case 's':
-				target_serial = optarg;
+				{
+					mbstate_t ps;
+					memset(&ps, 0, sizeof(ps));
+					if (mbsrtowcs(target_serial, (const char **)&optarg, TARGET_SERIAL_CHARS, &ps) < 1) {
+						fprintf(stderr, "Invalid serial number specified\n");
+						return -1;
+					}
+					serial_specified = 1;
+				}
 				break;
 			case 'f':
 				use_first = 1;
@@ -148,38 +151,36 @@ int main(int argc, char **argv)
 		}
 	}
 
-
 	wusbmote_init(verbose);
 
 	if (cmd_list) {
+		printf("Simply listing the devices...\n");
 		return listDevices();
 	}
 
-	if (!target_serial && !use_first) {
+	if (!serial_specified && !use_first) {
 		fprintf(stderr, "A serial number or -f must be used. Try -h for more information.\n");
 		return 1;
 	}
 
 	listctx = wusbmote_allocListCtx();
-	while ((cur_dev=wusbmote_listDevices(&inf, listctx)))
+	while ((selected_device = wusbmote_listDevices(&inf, listctx)))
 	{
-		if (target_serial) {
-			if (0 == strcmp(inf.str_serial, target_serial)) {
-				dev = cur_dev; // Last found will be used
+		if (serial_specified) {
+			if (0 == wcscmp(inf.str_serial, target_serial)) {
 				break;
 			}
 		}
 		else {
 			// use_first == 1
-			dev = cur_dev; // Last found will be used
-			printf("Will use device '%s' serial '%s' version %d.%d\n", inf.str_prodname, inf.str_serial, inf.major, inf.minor);
+			printf("Will use device '%ls' serial '%ls'\n", inf.str_prodname, inf.str_serial);
 			break;
 		}
 	}
 	wusbmote_freeListCtx(listctx);
 
-	if (!dev) {
-		if (target_serial) {
+	if (!selected_device) {
+		if (serial_specified) {
 			fprintf(stderr, "Device not found\n");
 		} else {
 			fprintf(stderr, "No device found\n");
@@ -187,7 +188,7 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	hdl = wusbmote_openDevice(dev);
+	hdl = wusbmote_openDevice(selected_device);
 	if (!hdl) {
 		printf("Error opening device. (Do you have permissions?)\n");
 		return 1;
@@ -199,7 +200,6 @@ int main(int argc, char **argv)
 	while((opt = getopt_long(argc, argv, short_optstr, longopts, NULL)) != -1)
 	{
 		unsigned char cmd[5] = {0,0,0,0,0};
-		unsigned char result[8];
 		int n;
 
 		switch (opt)
@@ -271,7 +271,7 @@ int main(int argc, char **argv)
 		}
 
 		if (cmd[0]) {
-			n = wusbmote_cmd(hdl, cmd, result);
+			n = wusbmote_send_cmd(hdl, cmd);
 			printf("command result: %d\n", n);
 		}
 	}

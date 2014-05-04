@@ -1,8 +1,8 @@
 CC=gcc
 LD=$(CC)
 
-CFLAGS=-Wall -g
-LDFLAGS= -lusb
+CFLAGS=-Wall -g `pkg-config hidapi-hidraw --cflags`
+LDFLAGS=`pkg-config hidapi-hidraw --libs`
 
 PREFIX=/usr/local
 

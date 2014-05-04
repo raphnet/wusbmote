@@ -18,19 +18,21 @@
  * The author may be contacted at raph@raphnet.net
  */
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
-#include <usb.h>
 #include "wusbmote.h"
 #include "wusbmote_priv.h"
 #include "../wusbmote_requests.h"
 
+#include "hidapi.h"
+
 static int dusbr_verbose = 0;
+
 
 #define IS_VERBOSE()	(dusbr_verbose)
 
 int wusbmote_init(int verbose)
 {
-	usb_init();
 	dusbr_verbose = verbose;
 	return 0;
 }
@@ -50,20 +52,19 @@ static char isProductIdHandled(unsigned short pid)
 	return 0;
 }
 
-/*
-static void wusbmote_initListCtx(struct wusbmote_list_ctx *ctx)
-{
-	memset(ctx, 0, sizeof(struct wusbmote_list_ctx));
-}
-*/
 struct wusbmote_list_ctx *wusbmote_allocListCtx(void)
 {
-	return calloc(1, sizeof(struct wusbmote_list_ctx));
+	struct wusbmote_list_ctx *ctx;
+	ctx = calloc(1, sizeof(struct wusbmote_list_ctx));
+	return ctx;
 }
 
 void wusbmote_freeListCtx(struct wusbmote_list_ctx *ctx)
 {
 	if (ctx) {
+		if (ctx->devs) {
+			hid_free_enumeration(ctx->devs);
+		}
 		free(ctx);
 	}
 }
@@ -73,148 +74,85 @@ void wusbmote_freeListCtx(struct wusbmote_list_ctx *ctx)
  * \param dst Destination buffer for device serial number/id.
  * \param dstbuf_size Destination buffer size.
  */
-wusbmote_device_t wusbmote_listDevices(struct wusbmote_info *info, struct wusbmote_list_ctx *ctx)
+struct wusbmote_info *wusbmote_listDevices(struct wusbmote_info *info, struct wusbmote_list_ctx *ctx)
 {
-	struct usb_bus *start_bus;
-	struct usb_device *start_dev;
-
 	memset(info, 0, sizeof(struct wusbmote_info));
 
-	if (ctx->dev && ctx->bus)
+	if (!ctx) {
+		fprintf(stderr, "wusbmote_listDevices: Passed null context\n");
+		return NULL;
+	}
+
+	if (ctx->devs)
 		goto jumpin;
 
 	if (IS_VERBOSE()) {
 		printf("Start listing\n");
 	}
 
-	usb_find_busses();
-	usb_find_devices();
-
-	start_bus = usb_get_busses();
-
-	if (start_bus == NULL) {
-		if (IS_VERBOSE()) {
-			printf("No USB busses found!\n");
-		}
+	ctx->devs = hid_enumerate(OUR_VENDOR_ID, 0x0000);
+	if (!ctx->devs) {
 		return NULL;
 	}
 
-	for (ctx->bus = start_bus; ctx->bus; ctx->bus = ctx->bus->next) {
-
-		start_dev = ctx->bus->devices;
-		for (ctx->dev = start_dev; ctx->dev; ctx->dev = ctx->dev->next) {
-			if (IS_VERBOSE()) {
-				printf("Considering USB 0x%04x:0x%04x\n", ctx->dev->descriptor.idVendor, ctx->dev->descriptor.idProduct);
-			}
-			if (ctx->dev->descriptor.idVendor == OUR_VENDOR_ID) {
-				if (isProductIdHandled(ctx->dev->descriptor.idProduct)) {
-					usb_dev_handle *hdl;
-
-					if (IS_VERBOSE()) {
-						printf("Recognized 0x%04x:0x%04x\n", ctx->dev->descriptor.idVendor, ctx->dev->descriptor.idProduct);
-					}
-
-					info->minor = ctx->dev->descriptor.bcdDevice & 0xff;
-					info->major = (ctx->dev->descriptor.bcdDevice & 0xff00) >> 8;
-					info->num_relays = 2;
-
-					// Try to read serial number
-					hdl = usb_open(ctx->dev);
-					if (hdl) {
-						info->access = 1;
-
-						if (0 >= usb_get_string_simple(hdl, ctx->dev->descriptor.iProduct, info->str_prodname, 256)) {
-							info->access = 0;
-						}
-						if (0 >= usb_get_string_simple(hdl, ctx->dev->descriptor.iSerialNumber, info->str_serial, 256)) {
-							info->access = 0;
-						}
-						usb_close(hdl);
-					}
-
-					return ctx->dev;
-				}
-			}
-
-jumpin:
-			// prevent 'error: label at end of compound statement'
-			continue;
+	for (ctx->cur_dev = ctx->devs; ctx->cur_dev; ctx->cur_dev = ctx->cur_dev->next)
+	{
+		if (isProductIdHandled(ctx->cur_dev->product_id))
+		{
+				wcsncpy(info->str_prodname, ctx->cur_dev->product_string, PRODNAME_MAXCHARS-1);
+				wcsncpy(info->str_serial, ctx->cur_dev->serial_number, SERIAL_MAXCHARS-1);
+				strncpy(info->str_path, ctx->cur_dev->path, PATH_MAXCHARS-1);
+				return info;
 		}
+
+		jumpin:
+		// prevent 'error: label at end of compound statement'
+		continue;
 	}
 
 	return NULL;
 }
 
-wusbmote_hdl_t wusbmote_openDevice(wusbmote_device_t dusb_dev)
+wusbmote_hdl_t wusbmote_openDevice(struct wusbmote_info *dev)
 {
-	struct usb_dev_handle *hdl;
-	int res;
-	int detach_attempted = 0;
+	hid_device *hdev;
 
-	hdl = usb_open(dusb_dev);
-	if (!hdl)
+	if (!dev)
 		return NULL;
 
-retry:
-	res = usb_claim_interface(hdl, 0);
-	if (res<0) {
-		if (!detach_attempted) {
-			detach_attempted = 1;
-			printf("Attempting to detach kernel driver...\n");
-			usb_detach_kernel_driver_np(hdl, 0);
-			goto retry;
-		}
+	if (IS_VERBOSE()) {
+		printf("Opening device path: '%s'\n", dev->str_path);
+	}
 
-		usb_close(hdl);
+	hdev = hid_open_path(dev->str_path);
+	if (!hdev)
 		return NULL;
-	}
 
-	if (detach_attempted) {
-		printf("****\nWarning: The kernel driver that was currently handling the device had to be detached so that the configuration commands could be sent. The device will not be re-attached. You will have to reconnect it manually.\n****\n");
-	}
-
-	return hdl;
+	return hdev;
 }
 
 void wusbmote_closeDevice(wusbmote_hdl_t hdl)
 {
-	usb_release_interface(hdl, 0);
-	usb_close(hdl);
+	hid_device *hdev = (hid_device*)hdl;
+	if (hdev) {
+		hid_close(hdev);
+	}
 }
 
-int wusbmote_cmd(wusbmote_hdl_t hdl, const unsigned char cmd[5], unsigned char dst[8])
+int wusbmote_send_cmd(wusbmote_hdl_t hdl, const unsigned char cmd[5])
 {
-	unsigned char buffer[8];
+	hid_device *hdev = (hid_device*)hdl;
+	unsigned char buffer[6];
 	int n;
-	int datlen;
 
-	n =	usb_control_msg(hdl,
-		USB_TYPE_VENDOR | USB_RECIP_DEVICE | USB_ENDPOINT_IN, /* requesttype */
-		cmd[0], 				/* bRequest*/
-		cmd[2]<<8 | cmd[1], 	/* wValue */
-		cmd[4]<<8 | cmd[3], 	/* wIndex */
-		(char*)buffer, sizeof(buffer), 5000);
+	buffer[0] = 0x00; // request ID set to 0 (device has only one)
+	memcpy(buffer + 1, cmd, 5);
 
-	/* Validate size first */
-	if (n>8) {
-		fprintf(stderr, "Too much data received! (%d)\n", n);
-		return -3;
-	} else if (n<1) {
-		fprintf(stderr, "Not enough data received! (%d)\n", n);
-		return -4;
+	n = hid_send_feature_report(hdev, buffer, 6);
+	if (n < 0) {
+		fprintf(stderr, "Could not send feature report (%ls)\n", hid_error(hdev));
+		return -1;
 	}
 
-	datlen = n;
-
-	/* Check if reply is for this command */
-	if (buffer[0] != cmd[0]) {
-		fprintf(stderr, "Invalid reply received (0x%02x)\n", buffer[0]);
-		return -5;
-	}
-
-	if (datlen && dst) {
-		memcpy(dst, buffer, datlen);
-	}
-
-	return datlen;
+	return 0;
 }
