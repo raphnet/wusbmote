@@ -1,4 +1,4 @@
--- Version 1.2 : Version 1.2
+-- May 4, 2014 : Version 1.2
   - Add mouse support (Using Nunchuk or Classic controller)
 	- Classic controller mouse scroll using right stick
 	- Nunchuck mouse scroll wheel by moving then holding C
