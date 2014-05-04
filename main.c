@@ -25,7 +25,6 @@
 #include <avr/interrupt.h>
 #include <avr/pgmspace.h>
 #include <avr/wdt.h>
-#include <avr/sleep.h>
 #include <util/delay.h>
 #include <string.h>
 
@@ -129,7 +128,7 @@ static void hardwareInit(void)
 	TCCR0B = 5;
 	TCCR2A = (1<<WGM21);
 	TCCR2B =(1<<CS22)|(1<<CS21)|(1<<CS20);
-	OCR2A= 50;  // for 240 hz
+	OCR2A= 196;  // for 60 hz
 #else
 	/* configure timer 0 for a rate of 12M/(1024 * 256) = 45.78 Hz (~22ms) */
 	TCCR0 = 5;      /* timer 0 prescaler: 1024 */
@@ -236,10 +235,10 @@ void transferGamepadReport(void)
 
 	for (i=0; i<=curGamepad->report_size; i+=8)
 	{
-		usbSetInterrupt(reportBuffer + i, todo > 8 ? 8 : todo);
 		while (!usbInterruptIsReady()) {
 			usbPoll(); wdt_reset();
 		}
+		usbSetInterrupt(reportBuffer + i, todo > 8 ? 8 : todo);
 		todo -= 8;
 	}
 }
@@ -297,20 +296,15 @@ int main(void)
 
 		if (mustPollControllers())
 		{
-			clrPollControllers();
 			if (!must_report)
 			{
-				sleep_enable();
-				sleep_cpu();
-				sleep_disable();
-				_delay_us(100);
-
 				curGamepad->update();
 				if (curGamepad->changed()) {
 					must_report = 1;
 				}
 			}
 
+			clrPollControllers();
 		}
 
 		if(must_report && usbInterruptIsReady())
