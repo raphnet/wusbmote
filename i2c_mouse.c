@@ -222,6 +222,8 @@ static void setLastValues(unsigned char x, unsigned char y, unsigned short rx, u
 					W = 0;
 				}
 				wvalue = W;
+			} else {
+				wvalue = 0;
 			}
 
 		}
