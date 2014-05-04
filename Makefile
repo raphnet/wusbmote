@@ -5,7 +5,7 @@
 # Tabsize: 4
 # Copyright: (c) 2006 by OBJECTIVE DEVELOPMENT Software GmbH
 # License: Proprietary, free under certain conditions. See Documentation.
-# This Revision: $Id: Makefile,v 1.5 2014-05-03 21:12:24 cvs Exp $
+# This Revision: $Id: Makefile,v 1.6 2014-05-04 13:52:43 cvs Exp $
 
 UISP = uisp -dprog=stk500 -dpart=atmega8 -dserial=/dev/ttyS1
 COMPILE = avr-gcc -Wall -Os -Iusbdrv -I. -mmcu=atmega8 -DF_CPU=12000000L #-DDEBUG_LEVEL=1
@@ -71,3 +71,6 @@ fuse_usb:
 
 reset:
 	avrdude -p m8 -P usb -c avrispmkII -B 10.0
+
+erase:
+	avrdude -p m8 -P usb -c avrispmkII -B 1.0 -e
