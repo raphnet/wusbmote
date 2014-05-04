@@ -49,7 +49,7 @@ static void printUsage(void)
 	printf("  --scroll_nunchuck_threshold val    Set the nunchuck roll threshold for scrolling. Typ: 127\n");
 	printf("  --scroll_nunchuck_step val         Set the scroll step size (Higher = more scrolling). Typ: 5\n");
 	printf("  --scroll_nunchuck_c val            Enable/disable scrolling by move + C. (1 = enable, 0 = disable)\n");
-	printf("  --scroll_nunckuck_c_threshold val  Stick deflection threshold for scrolling. (Typ: 12)\n");
+	printf("  --scroll_nunchuck_c_threshold val  Stick deflection threshold for scrolling. (Typ: 64)\n");
 	printf("\n");
 }
 
@@ -79,7 +79,7 @@ struct option longopts[] = {
 	{ "scroll_nunchuck_threshold", 1, NULL, OPT_SCRL_NUNCHUCK_THRES },
 	{ "scroll_nunchuck_step", 1, NULL, OPT_SCRL_NUNCHUCK_STEP },
 	{ "scroll_nunchuck_c", 1, NULL, OPT_SCRL_NUNCHUCK_C },
-	{ "scroll_nunckuck_c_threshold", 1, NULL, OPT_SCRL_NUNCHUCK_C_THRES },
+	{ "scroll_nunchuck_c_threshold", 1, NULL, OPT_SCRL_NUNCHUCK_C_THRES },
 	{ },
 };
 

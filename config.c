@@ -46,7 +46,7 @@ void eeprom_app_write_defaults(void)
 	g_eeprom_data.cfg.scroll_nunchuck_step = 0; // 0 is off. 5 is not bad.
 	g_eeprom_data.cfg.scroll_nunchuck_invert = 0;
 	g_eeprom_data.cfg.scroll_nunchuck_c = 1;
-	g_eeprom_data.cfg.scroll_nunchuck_c_threshold = 12;
+	g_eeprom_data.cfg.scroll_nunchuck_c_threshold = 64;
 }
 
 /* Called by the eeprom driver once the content
@@ -104,7 +104,7 @@ unsigned char config_handleCommand(unsigned char cmd, const unsigned char rqdata
 			g_eeprom_data.cfg.scroll_nunchuck_c = rqdata[0];
 			break;
 		case RQ_WUSBMOTE_SET_SCROLL_NUNCHUCK_C_THRESHOLD:
-			g_eeprom_data.cfg.scroll_nunchuck_threshold = rqdata[0];
+			g_eeprom_data.cfg.scroll_nunchuck_c_threshold = rqdata[0];
 			break;
 
 		default:
