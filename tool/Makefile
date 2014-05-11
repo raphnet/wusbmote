@@ -8,7 +8,7 @@ PREFIX=/usr/local
 
 PROG=wusbmote_ctl
 
-OBJS=$(patsubst %.c,%.o,$(wildcard *.c))
+OBJS=main.o wusbmote.o
 
 .PHONY : clean install
 

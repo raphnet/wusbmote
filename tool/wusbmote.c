@@ -49,6 +49,8 @@ static char isProductIdHandled(unsigned short pid)
 	{
 		case 0x0010: // WUSBMote v1.2 (Joystick mode)
 		case 0x0011: // WUSBMote v1.2 (Mouse mode)
+		case 0x0012: // WUSBMote v1.2.1 (Joystick)
+		case 0x0013: // WUSBMote v1.2.1 (Mouse)
 			return 1;
 	}
 	return 0;
