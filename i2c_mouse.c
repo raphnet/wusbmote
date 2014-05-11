@@ -102,8 +102,7 @@ static const char mouse_report_descriptor[] PROGMEM = {
     0x95, 0x01,                    //     REPORT_COUNT (1)
     0x81, 0x06,                    //     INPUT (Data,Var,Rel)
 
-    0xc0,                          //   END_COLLECTION
-    0xc0,                          // END_COLLECTION
+    0xc0,                          //   END_COLLECTION (Physical)
 
 	//// Vendor defined feature report
 	0xA1, 0x02,				// COLLECTION (Logical)
@@ -114,7 +113,9 @@ static const char mouse_report_descriptor[] PROGMEM = {
 		0x75, 0x08,			// REPORT_SIZE (8)
 		0x95, 0x05,			// REPORT_COUNT (5)
 		0xB1, 0x00,			// FEATURE (Data,Ary,Abs)
-	0xC0					// END COLLECTION
+	0xC0,					// END COLLECTION (Logical)
+
+	0xc0,                          // END_COLLECTION (Application)
 };
 
 
@@ -199,6 +200,21 @@ static void setLastValues(unsigned char x, unsigned char y, unsigned short rx, u
 	X -= XO;
 	Y -= YO;
 
+	if (X > MOUSE_DEADZONE) {
+		X = X - MOUSE_DEADZONE;
+	} else if (X < -MOUSE_DEADZONE) {
+		X = X + MOUSE_DEADZONE;
+	} else {
+		X = 0;
+	}
+	if (Y > MOUSE_DEADZONE) {
+		Y = Y - MOUSE_DEADZONE;
+	} else if (Y < -MOUSE_DEADZONE) {
+		Y = Y + MOUSE_DEADZONE;
+	} else {
+		Y = 0;
+	}
+
 	if (peripheral_id == ID_NUNCHUK)
 	{
 		if (g_eeprom_data.cfg.scroll_nunchuck_c)
@@ -208,7 +224,7 @@ static void setLastValues(unsigned char x, unsigned char y, unsigned short rx, u
 
 			// button down event
 			if (c && !last_c) {
-				if ((Y > MOUSE_DEADZONE) || (Y < -MOUSE_DEADZONE))
+				if (Y != 0)
 					scrolling = 1;
 			}
 			// button release event
@@ -298,22 +314,6 @@ static void setLastValues(unsigned char x, unsigned char y, unsigned short rx, u
 
 		wvalue = W;
 	}
-
-	if (X > MOUSE_DEADZONE) {
-		X -= MOUSE_DEADZONE;
-	} else if (X < -MOUSE_DEADZONE) {
-		X += MOUSE_DEADZONE;
-	} else {
-		X = 0;
-	}
-	if (Y > MOUSE_DEADZONE) {
-		Y -= MOUSE_DEADZONE;
-	} else if (Y < -MOUSE_DEADZONE) {
-		Y += MOUSE_DEADZONE;
-	} else {
-		Y = 0;
-	}
-
 
 	if (X || Y || W || (btns & 0xf0)) {
 		g_active = 1;

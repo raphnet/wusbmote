@@ -479,7 +479,6 @@ static const char usbHidReportDescriptor_5axes_16btns[] PROGMEM = {
     0x95, 16,                    // REPORT_COUNT (16)
     0x81, 0x02,                    // INPUT (Data,Var,Abs)
 
-    0xc0,                           // END_COLLECTION
 
 	//// Vendor defined feature report
 	0xA1, 0x02,				// COLLECTION (Logical)
@@ -490,7 +489,9 @@ static const char usbHidReportDescriptor_5axes_16btns[] PROGMEM = {
 		0x75, 0x08,			// REPORT_SIZE (8)
 		0x95, 0x05,			// REPORT_COUNT (5)
 		0xB1, 0x00,			// FEATURE (Data,Ary,Abs)
-	0xC0					// END COLLECTION
+	0xC0,					// END COLLECTION
+
+	0xc0,                           // END_COLLECTION
 };
 
 
