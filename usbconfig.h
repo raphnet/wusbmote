@@ -5,7 +5,7 @@
  * Tabsize: 4
  * Copyright: (c) 2005 by OBJECTIVE DEVELOPMENT Software GmbH
  * License: GNU GPL v2 (see License.txt) or proprietary (CommercialLicense.txt)
- * This Revision: $Id: usbconfig.h,v 1.6 2014-05-04 18:41:31 cvs Exp $
+ * This Revision: $Id: usbconfig.h,v 1.7 2014-05-11 18:00:20 cvs Exp $
  */
 
 #ifndef __usbconfig_h_included__
@@ -131,14 +131,14 @@ rename it to "usbconfig.h". Then edit it accordingly.
 
 #define USB_CFG_VENDOR_ID       0x9B, 0x28
 #define USB_CFG_DEVICE_ID
-#define USB_CFG_DEVICE_ID_JOYSTICK	0x10, 0x00
-#define USB_CFG_DEVICE_ID_MOUSE		0x11, 0x00
+#define USB_CFG_DEVICE_ID_JOYSTICK	0x12, 0x00
+#define USB_CFG_DEVICE_ID_MOUSE		0x13, 0x00
 
 #define USB_CFG_DEVICE_VERSION  0x02, 0x01
 #define USB_CFG_VENDOR_NAME     'r', 'a', 'p', 'h', 'n', 'e', 't', '.', 'n', 'e', 't'
 #define USB_CFG_VENDOR_NAME_LEN 11
-#define USB_CFG_DEVICE_NAME     'W','U','S','B','m','o','t','e','_','v','1','.','2'
-#define USB_CFG_DEVICE_NAME_LEN 13
+#define USB_CFG_DEVICE_NAME     'W','U','S','B','m','o','t','e','_','v','1','.','2','.','1'
+#define USB_CFG_DEVICE_NAME_LEN 15
 
 /* Same as above for the device name. If you don't want a device name, undefine
  * the macros. See the file USBID-License.txt before you assign a name if you
