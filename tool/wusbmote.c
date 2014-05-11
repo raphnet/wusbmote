@@ -34,11 +34,13 @@ static int dusbr_verbose = 0;
 int wusbmote_init(int verbose)
 {
 	dusbr_verbose = verbose;
+	hid_init();
 	return 0;
 }
 
 void wusbmote_shutdown(void)
 {
+	hid_exit();
 }
 
 static char isProductIdHandled(unsigned short pid)
@@ -92,11 +94,15 @@ struct wusbmote_info *wusbmote_listDevices(struct wusbmote_info *info, struct wu
 
 	ctx->devs = hid_enumerate(OUR_VENDOR_ID, 0x0000);
 	if (!ctx->devs) {
+		printf("Hid enumerate returned NULL\n");
 		return NULL;
 	}
 
 	for (ctx->cur_dev = ctx->devs; ctx->cur_dev; ctx->cur_dev = ctx->cur_dev->next)
 	{
+		if (IS_VERBOSE()) {
+			printf("Considering 0x%04x:0x%04x\n", ctx->cur_dev->vendor_id, ctx->cur_dev->product_id);
+		}
 		if (isProductIdHandled(ctx->cur_dev->product_id))
 		{
 				wcsncpy(info->str_prodname, ctx->cur_dev->product_string, PRODNAME_MAXCHARS-1);
