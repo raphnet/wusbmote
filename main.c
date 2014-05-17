@@ -52,16 +52,16 @@ static uchar rt_usbDeviceDescriptorSize=0;
 
 char usbDescriptorConfiguration[] = { 0 }; // dummy
 
-uchar dataHidReport[22] = {
+const uchar dataHidReport[] PROGMEM = {
 	0x06, 0x00, 0xff,	// USAGE_PAGE (Generic Desktop)
 	0x09, 0x01,			// USAGE (Vendor Usage 1)
 	0xa1, 0x01,			// COLLECTION (Application)
 	0x15, 0x00,			//   LOGICAL_MINIMUM (0)
 	0x26, 0xff, 0x00,	//   LOGICAL_MAXIMUM (255)
 	0x75, 0x08,			//   REPORT_SIZE (8)
-	0x95, 0x80,			//   REPORT_COUNT (128)
-	0x09, 0x00,			//   USAGE (Undefined)
-	0xb2, 0x02, 0x01,	//   FEATURE (Data,Var,Abs,Buf)
+	0x95, 0x05,			//   REPORT_COUNT (5)
+	0x09, 0x01,			//   USAGE (Vendor defined)
+	0xB1, 0x00,			//   FEATURE (Data,Ary,Abs)
 	0xc0				// END_COLLECTION
 };
 
@@ -127,7 +127,7 @@ uchar my_usbDescriptorConfiguration[] = {    /* USB configuration descriptor */
     0x01,       /* number of HID Report (or other HID class) Descriptor infos to follow */
     0x22,       /* descriptor type: report */
     sizeof(dataHidReport), 0,  /* total length of report descriptor */
-
+#if 1
 	/* endpoint descriptor for endpoint 3 */
     7,          /* sizeof(usbDescrEndpoint) */
     USBDESCR_ENDPOINT,  /* descriptor type = endpoint */
@@ -135,6 +135,7 @@ uchar my_usbDescriptorConfiguration[] = {    /* USB configuration descriptor */
     0x03,       /* attrib: Interrupt endpoint */
     8, 0,       /* maximum packet size */
     USB_CFG_INTR_POLL_INTERVAL, /* in ms */
+#endif
 };
 
 static Gamepad *curGamepad;
