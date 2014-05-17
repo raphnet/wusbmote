@@ -52,21 +52,35 @@ static uchar rt_usbDeviceDescriptorSize=0;
 
 char usbDescriptorConfiguration[] = { 0 }; // dummy
 
+uchar dataHidReport[22] = {
+	0x06, 0x00, 0xff,	// USAGE_PAGE (Generic Desktop)
+	0x09, 0x01,			// USAGE (Vendor Usage 1)
+	0xa1, 0x01,			// COLLECTION (Application)
+	0x15, 0x00,			//   LOGICAL_MINIMUM (0)
+	0x26, 0xff, 0x00,	//   LOGICAL_MAXIMUM (255)
+	0x75, 0x08,			//   REPORT_SIZE (8)
+	0x95, 0x80,			//   REPORT_COUNT (128)
+	0x09, 0x00,			//   USAGE (Undefined)
+	0xb2, 0x02, 0x01,	//   FEATURE (Data,Var,Abs,Buf)
+	0xc0				// END_COLLECTION
+};
+
 uchar my_usbDescriptorConfiguration[] = {    /* USB configuration descriptor */
     9,          /* sizeof(usbDescriptorConfiguration): length of descriptor in bytes */
     USBDESCR_CONFIG,    /* descriptor type */
-    18 + 7 * USB_CFG_HAVE_INTRIN_ENDPOINT + 9, 0,
+    18 + 7 * USB_CFG_HAVE_INTRIN_ENDPOINT + 9 + 9 + 9 + 7, 0,
                 /* total length of data returned (including inlined descriptors) */
-    1,          /* number of interfaces in this configuration */
+    2,          /* number of interfaces in this configuration */
     1,          /* index of this configuration */
     0,          /* configuration name string index */
 #if USB_CFG_IS_SELF_POWERED
     USBATTR_SELFPOWER,  /* attributes */
 #else
-    USBATTR_BUSPOWER,   /* attributes */
+    USBATTR_BUSPOWER | 0x80,   /* attributes */
 #endif
     USB_CFG_MAX_BUS_POWER/2,            /* max USB current in 2mA units */
-/* interface descriptor follows inline: */
+
+	/* interface descriptor follows inline: */
     9,          /* sizeof(usbDescrInterface): length of descriptor in bytes */
     USBDESCR_INTERFACE, /* descriptor type */
     0,          /* index of this interface */
@@ -76,23 +90,51 @@ uchar my_usbDescriptorConfiguration[] = {    /* USB configuration descriptor */
     USB_CFG_INTERFACE_SUBCLASS,
     USB_CFG_INTERFACE_PROTOCOL,
     0,          /* string index for interface */
-//#if (USB_CFG_DESCR_PROPS_HID & 0xff)    /* HID descriptor */
-    9,          /* sizeof(usbDescrHID): length of descriptor in bytes */
+
+	9,          /* sizeof(usbDescrHID): length of descriptor in bytes */
     USBDESCR_HID,   /* descriptor type: HID */
     0x01, 0x01, /* BCD representation of HID version */
     0x00,       /* target country code */
     0x01,       /* number of HID Report (or other HID class) Descriptor infos to follow */
     0x22,       /* descriptor type: report */
     USB_CFG_HID_REPORT_DESCRIPTOR_LENGTH, 0,  /* total length of report descriptor */
-//#endif
-#if USB_CFG_HAVE_INTRIN_ENDPOINT    /* endpoint descriptor for endpoint 1 */
+
+    /* endpoint descriptor for endpoint 1 */
     7,          /* sizeof(usbDescrEndpoint) */
     USBDESCR_ENDPOINT,  /* descriptor type = endpoint */
     0x81,       /* IN endpoint number 1 */
     0x03,       /* attrib: Interrupt endpoint */
     8, 0,       /* maximum packet size */
     USB_CFG_INTR_POLL_INTERVAL, /* in ms */
-#endif
+
+	/**** Interface 1 *****/
+
+	/* interface descriptor follows inline: */
+    9,          /* sizeof(usbDescrInterface): length of descriptor in bytes */
+    USBDESCR_INTERFACE, /* descriptor type */
+    1,          /* index of this interface */
+    0,          /* alternate setting for this interface */
+    USB_CFG_HAVE_INTRIN_ENDPOINT,   /* endpoints excl 0: number of endpoint descriptors to follow */
+    USB_CFG_INTERFACE_CLASS,
+    USB_CFG_INTERFACE_SUBCLASS,
+    USB_CFG_INTERFACE_PROTOCOL,
+    0,          /* string index for interface */
+
+	9,          /* sizeof(usbDescrHID): length of descriptor in bytes */
+    USBDESCR_HID,   /* descriptor type: HID */
+    0x01, 0x01, /* BCD representation of HID version */
+    0x00,       /* target country code */
+    0x01,       /* number of HID Report (or other HID class) Descriptor infos to follow */
+    0x22,       /* descriptor type: report */
+    sizeof(dataHidReport), 0,  /* total length of report descriptor */
+
+	/* endpoint descriptor for endpoint 3 */
+    7,          /* sizeof(usbDescrEndpoint) */
+    USBDESCR_ENDPOINT,  /* descriptor type = endpoint */
+    0x83,       /* IN endpoint number 3 */
+    0x03,       /* attrib: Interrupt endpoint */
+    8, 0,       /* maximum packet size */
+    USB_CFG_INTR_POLL_INTERVAL, /* in ms */
 };
 
 static Gamepad *curGamepad;
@@ -177,8 +219,14 @@ uchar	usbFunctionDescriptor(struct usbRequest *rq)
 						usbMsgPtr = (void*)rt_usbDeviceDescriptor;
 						return rt_usbDeviceDescriptorSize;
 					case USBDESCR_HID_REPORT:
-						usbMsgPtr = (void*)rt_usbHidReportDescriptor;
-						return rt_usbHidReportDescriptorSize;
+						// HID 1.1 : 7.1.1 Get_Descriptor request. wIndex is the interface number.
+						if (rq->wIndex.word==1) {
+							usbMsgPtr = (void*)dataHidReport;
+							return sizeof(dataHidReport);
+						} else {
+							usbMsgPtr = (void*)rt_usbHidReportDescriptor;
+							return rt_usbHidReportDescriptorSize;
+						}
 					case USBDESCR_CONFIG:
 						usbMsgPtr = my_usbDescriptorConfiguration;
 						return sizeof(my_usbDescriptorConfiguration);

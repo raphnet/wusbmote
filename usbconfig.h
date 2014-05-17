@@ -5,7 +5,7 @@
  * Tabsize: 4
  * Copyright: (c) 2005 by OBJECTIVE DEVELOPMENT Software GmbH
  * License: GNU GPL v2 (see License.txt) or proprietary (CommercialLicense.txt)
- * This Revision: $Id: usbconfig.h,v 1.7 2014-05-11 18:00:20 cvs Exp $
+ * This Revision: $Id: usbconfig.h,v 1.8 2014-05-17 20:11:07 cvs Exp $
  */
 
 #ifndef __usbconfig_h_included__
@@ -65,7 +65,7 @@ rename it to "usbconfig.h". Then edit it accordingly.
 /* Define this to 1 if you want to compile a version with two endpoints: The
  * default control endpoint 0 and an interrupt-in endpoint 1.
  */
-#define USB_CFG_HAVE_INTRIN_ENDPOINT3   0
+#define USB_CFG_HAVE_INTRIN_ENDPOINT3   1
 /* Define this to 1 if you want to compile a version with three endpoints: The
  * default control endpoint 0, an interrupt-in endpoint 1 and an interrupt-in
  * endpoint 3. You must also enable endpoint 1 above.
@@ -131,14 +131,14 @@ rename it to "usbconfig.h". Then edit it accordingly.
 
 #define USB_CFG_VENDOR_ID       0x9B, 0x28
 #define USB_CFG_DEVICE_ID
-#define USB_CFG_DEVICE_ID_JOYSTICK	0x12, 0x00
-#define USB_CFG_DEVICE_ID_MOUSE		0x13, 0x00
+#define USB_CFG_DEVICE_ID_JOYSTICK	0x14, 0x00
+#define USB_CFG_DEVICE_ID_MOUSE		0x15, 0x00
 
 #define USB_CFG_DEVICE_VERSION  0x02, 0x01
 #define USB_CFG_VENDOR_NAME     'r', 'a', 'p', 'h', 'n', 'e', 't', '.', 'n', 'e', 't'
 #define USB_CFG_VENDOR_NAME_LEN 11
-#define USB_CFG_DEVICE_NAME     'W','U','S','B','m','o','t','e','_','v','1','.','2','.','1'
-#define USB_CFG_DEVICE_NAME_LEN 15
+#define USB_CFG_DEVICE_NAME     'W','U','S','B','m','o','t','e','_','v','1','.','3'
+#define USB_CFG_DEVICE_NAME_LEN 13
 
 /* Same as above for the device name. If you don't want a device name, undefine
  * the macros. See the file USBID-License.txt before you assign a name if you

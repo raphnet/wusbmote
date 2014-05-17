@@ -43,7 +43,7 @@ void wusbmote_shutdown(void)
 	hid_exit();
 }
 
-static char isProductIdHandled(unsigned short pid)
+static char isProductIdHandled(unsigned short pid, int interface_number)
 {
 	switch (pid)
 	{
@@ -52,6 +52,11 @@ static char isProductIdHandled(unsigned short pid)
 		case 0x0012: // WUSBMote v1.2.1 (Joystick)
 		case 0x0013: // WUSBMote v1.2.1 (Mouse)
 			return 1;
+		case 0x0014: // WUSBMote v1.3 (Joystick)
+		case 0x0015: // WUSBMote v1.3 (Mouse)
+			if (interface_number == 1)
+				return 1;
+			break;
 	}
 	return 0;
 }
@@ -105,7 +110,7 @@ struct wusbmote_info *wusbmote_listDevices(struct wusbmote_info *info, struct wu
 		if (IS_VERBOSE()) {
 			printf("Considering 0x%04x:0x%04x\n", ctx->cur_dev->vendor_id, ctx->cur_dev->product_id);
 		}
-		if (isProductIdHandled(ctx->cur_dev->product_id))
+		if (isProductIdHandled(ctx->cur_dev->product_id, ctx->cur_dev->interface_number))
 		{
 				wcsncpy(info->str_prodname, ctx->cur_dev->product_string, PRODNAME_MAXCHARS-1);
 				wcsncpy(info->str_serial, ctx->cur_dev->serial_number, SERIAL_MAXCHARS-1);
