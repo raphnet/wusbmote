@@ -1,0 +1,38 @@
+--- Classic controller (1)
+
+calibration : e1 15 82  e3 1a 7e  e3 1d 82  e4 1a 81  1a 18  7b d0
+calibration2: e1 15 82  e3 1a 7e  e3 1d 82  e4 1a 81  1a 18  7b d0
+
+Raw data: a0 1f 10 43 ff ff
+X: 0x80, Y: 0x83, Rx: 0x10, Ry: 0x10, Lt: 0x02, Rt: 0x03
+
+Sliders held down:
+Raw data: a0 1f 70 dd dd ff
+X: 0x80, Y: 0x83, Rx: 0x10, Ry: 0x10, Lt: 0x1e, Rt: 0x1d
+
+
+--- Classic controller (2)
+
+calibration : e1 1b 7e  ea 1b 83  e5 1b 82  e4 16 80  26 22  9b f0
+calibration2: e1 1b 7e  ea 1b 83  e5 1b 82  e4 16 80  26 22  9b f0
+
+Sliders relased:
+Raw data: 9f 21 10 63 ff ff
+X: 0x7c, Y: 0x7b, Rx: 0x10, Ry: 0x10, Lt: 0x03, Rt: 0x03
+
+Sliders held:
+Raw data: 9f 21 70 dd dd ff
+X: 0x7c, Y: 0x7b, Rx: 0x10, Ry: 0x10, Lt: 0x1e, Rt: 0x1d
+
+
+--- Classic controller RVL-005(-02)  (Black)
+(note: No analog sliders)
+
+calibration: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+calibration2: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+
+Raw data: a1 1d 0f 00 ff ff
+X: 0x84, Y: 0x8b, Rx: 0x10, Ry: 0x0f, Lt: 0x00, Rt: 0x00
+
+Raw data: a1 1d 6f ff dd ff
+X: 0x84, Y: 0x8b, Rx: 0x10, Ry: 0x0f, Lt: 0x1f, Rt: 0x1f
