@@ -52,6 +52,8 @@ static void printUsage(void)
 	printf("  --scroll_nunchuck_c val            Enable/disable scrolling by move + C. (1 = enable, 0 = disable)\n");
 	printf("  --scroll_nunchuck_c_threshold val  Stick deflection threshold for scrolling. (Typ: 64)\n");
 	printf("\n");
+	printf("Advanced:\n");
+	printf("  --i2c_raw_mode                     Put the device in raw i2c mode (not joystick, not mouse)\n");
 }
 
 #define OPT_SET_SERIAL				257
@@ -65,6 +67,7 @@ static void printUsage(void)
 #define OPT_SCRL_NUNCHUCK_INVERT	265
 #define OPT_SCRL_NUNCHUCK_C			266
 #define OPT_SCRL_NUNCHUCK_C_THRES	267
+#define OPT_I2C_RAW_MODE			268
 
 struct option longopts[] = {
 	{ "help", 0, NULL, 'h' },
@@ -81,6 +84,7 @@ struct option longopts[] = {
 	{ "scroll_nunchuck_step", 1, NULL, OPT_SCRL_NUNCHUCK_STEP },
 	{ "scroll_nunchuck_c", 1, NULL, OPT_SCRL_NUNCHUCK_C },
 	{ "scroll_nunchuck_c_threshold", 1, NULL, OPT_SCRL_NUNCHUCK_C_THRES },
+	{ "i2c_raw_mode", 0, NULL, OPT_I2C_RAW_MODE },
 	{ },
 };
 
@@ -219,6 +223,12 @@ int main(int argc, char **argv)
 				printf("Setting mouse/joystick mode...");
 				cmd[0] = RQ_WUSBMOTE_SET_MODE;
 				cmd[1] = opt == OPT_MOUSE_MODE ? CFG_MODE_MOUSE : CFG_MODE_JOYSTICK;
+				break;
+
+			case OPT_I2C_RAW_MODE:
+				printf("Enabling I2C raw mode\n");
+				cmd[0] = RQ_WUSBMOTE_SET_MODE;
+				cmd[1] = CFG_MODE_I2C_RAW;
 				break;
 
 			case OPT_MOUSE_DIV:

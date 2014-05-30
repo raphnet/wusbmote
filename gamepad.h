@@ -15,6 +15,9 @@ typedef struct {
 	void (*update)(void);
 	char (*changed)(void);
 	void (*buildReport)(unsigned char *buf);
+
+	char (*setFeatureReport)(unsigned char *data, unsigned char len);
+	unsigned char (*getFeatureReport)(unsigned char *dst);
 } Gamepad;
 
 #endif // _gamepad_h__

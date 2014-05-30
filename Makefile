@@ -5,13 +5,13 @@
 # Tabsize: 4
 # Copyright: (c) 2006 by OBJECTIVE DEVELOPMENT Software GmbH
 # License: Proprietary, free under certain conditions. See Documentation.
-# This Revision: $Id: Makefile,v 1.6 2014-05-04 13:52:43 cvs Exp $
+# This Revision: $Id: Makefile,v 1.7 2014-05-30 01:46:07 cvs Exp $
 
 UISP = uisp -dprog=stk500 -dpart=atmega8 -dserial=/dev/ttyS1
 COMPILE = avr-gcc -Wall -Os -Iusbdrv -I. -mmcu=atmega8 -DF_CPU=12000000L #-DDEBUG_LEVEL=1
 HEXFILE=wusbmote-m8.hex
 
-OBJECTS = usbdrv/usbdrv.o usbdrv/usbdrvasm.o usbdrv/oddebug.o main.o i2c_gamepad.o i2c_mouse.o i2c.o eeprom.o config.o
+OBJECTS = usbdrv/usbdrv.o usbdrv/usbdrvasm.o usbdrv/oddebug.o main.o i2c_gamepad.o i2c_mouse.o i2c_generic.o i2c.o eeprom.o config.o
 
 # symbolic targets:
 all:	$(HEXFILE)

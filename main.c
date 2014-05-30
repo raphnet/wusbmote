@@ -36,6 +36,7 @@
 
 #include "i2c_gamepad.h"
 #include "i2c_mouse.h"
+#include "i2c_generic.h"
 
 #if defined(__AVR_ATmega168__) || defined(__AVR_ATmega168A__) || \
 	defined(__AVR_ATmega168P__) || defined(__AVR_ATmega328__) || \
@@ -243,6 +244,8 @@ uchar	usbFunctionDescriptor(struct usbRequest *rq)
 	return 0;
 }
 
+static uchar g_set_report_interface = 0;
+
 uchar	usbFunctionSetup(uchar data[8])
 {
 	uchar rqdata[4];
@@ -259,11 +262,22 @@ uchar	usbFunctionSetup(uchar data[8])
 				case USBRQ_HID_GET_REPORT:
 					/* wValue: ReportType (highbyte), ReportID (lowbyte) */
 					/* we only have one report type, so don't look at wValue */
-					curGamepad->buildReport(reportBuffer);
+					if (rq->wValue.bytes[1] == 0x03) // Feature report
+					{
+						if (curGamepad->getFeatureReport)
+							return curGamepad->getFeatureReport(reportBuffer);
+						return 0;
+					}
+					else {
+						curGamepad->buildReport(reportBuffer);
+					}
 					return curGamepad->report_size;
 
 				case USBRQ_HID_SET_REPORT:
 					/* wValue: Report Type (high), ReportID (low) */
+					// wIndex : Interface
+					// Note: Report type not checked (we only have feature reports, not out reports)
+					g_set_report_interface = rq->wIndex.word;
 					return USB_NO_MSG; // usbFunctionWrite will be called
 			}
 			break;
@@ -284,12 +298,25 @@ uchar usbFunctionWrite(uchar *data, uchar len)
 {
 	unsigned char dst[8];
 
-	if (len != 5) {
-		return 0xff;
-	}
+	if (g_set_report_interface==0)
+	{
+		if (curGamepad->setFeatureReport)
+		{
+			if (curGamepad->setFeatureReport(data, len) < 0)
+				return 0xff;
+			return 1;
+		}
 
-	if (!config_handleCommand(data[0], data+1, dst)) {
-		return 0xff;
+		return 1;
+	}
+	else {
+		if (len != 5) {
+			return 0xff;
+		}
+
+		if (!config_handleCommand(data[0], data+1, dst)) {
+			return 0xff;
+		}
 	}
 
 	return 1;
@@ -333,6 +360,10 @@ int main(void)
 
 		case CFG_MODE_MOUSE:
 			curGamepad = i2cMouse_GetGamepad();
+			break;
+
+		case CFG_MODE_I2C_RAW:
+			curGamepad = rawi2c_GetGamepad();
 			break;
 	}
 

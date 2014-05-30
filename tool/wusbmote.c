@@ -54,6 +54,7 @@ static char isProductIdHandled(unsigned short pid, int interface_number)
 			return 1;
 		case 0x0014: // WUSBMote v1.3 (Joystick)
 		case 0x0015: // WUSBMote v1.3 (Mouse)
+		case 0x0016: // WUSBMote v1.3 (i2c raw mode)
 			if (interface_number == 1)
 				return 1;
 			break;

@@ -5,7 +5,7 @@
  * Tabsize: 4
  * Copyright: (c) 2005 by OBJECTIVE DEVELOPMENT Software GmbH
  * License: GNU GPL v2 (see License.txt) or proprietary (CommercialLicense.txt)
- * This Revision: $Id: usbconfig.h,v 1.8 2014-05-17 20:11:07 cvs Exp $
+ * This Revision: $Id: usbconfig.h,v 1.9 2014-05-30 01:46:07 cvs Exp $
  */
 
 #ifndef __usbconfig_h_included__
@@ -133,6 +133,7 @@ rename it to "usbconfig.h". Then edit it accordingly.
 #define USB_CFG_DEVICE_ID
 #define USB_CFG_DEVICE_ID_JOYSTICK	0x14, 0x00
 #define USB_CFG_DEVICE_ID_MOUSE		0x15, 0x00
+#define USB_CFG_DEVICE_ID_RAW_I2C	0x16, 0x00
 
 #define USB_CFG_DEVICE_VERSION  0x02, 0x01
 #define USB_CFG_VENDOR_NAME     'r', 'a', 'p', 'h', 'n', 'e', 't', '.', 'n', 'e', 't'

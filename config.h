@@ -3,6 +3,7 @@
 
 #define CFG_MODE_JOYSTICK	0x00
 #define CFG_MODE_MOUSE		0x01
+#define CFG_MODE_I2C_RAW	0x02
 
 struct eeprom_cfg {
 	uint8_t serial[4];

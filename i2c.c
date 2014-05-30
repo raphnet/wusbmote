@@ -52,7 +52,6 @@ static int i2cWaitInt(void)
 			return -1;
 		}
 		_delay_us(100);
-		usbPoll();
 	}
 
 	DEBUGLOW();
