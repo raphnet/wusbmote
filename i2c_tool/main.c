@@ -275,12 +275,6 @@ void pollWiimoteAccessory(hid_device *hdl)
 	printf("  Min Y: 0x%02x\n", calibration[10]);
 	printf("  Center Y: 0x%02x\n", calibration[11]);
 
-	printf("slider ?: 0x%02x \n", calibration[12]>>3);
-	printf("slider ?: 0x%02x \n", calibration[12]&0x1f);
-	printf("slider ?: 0x%02x \n", (calibration[12]&0x07) | (calibration[13]>>6));
-	printf("slider ?: 0x%02x \n", calibration[13]>>3);
-	printf("slider ?: 0x%02x \n", calibration[14]>>3);
-
 	while(1)
 	{
 
